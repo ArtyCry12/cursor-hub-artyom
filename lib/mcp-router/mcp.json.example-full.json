@@ -17,6 +17,15 @@
         "@modelcontextprotocol/server-memory"
       ]
     },
+    "model-worker": {
+      "command": "node",
+      "args": [
+        "C:/Users/artyo/.cursor/lib/model-router/mcp/server.mjs"
+      ],
+      "env": {
+        "MODEL_ROUTER_STATE_ROOT": "C:/Users/artyo/.cursor/.cache/model-router"
+      }
+    },
     "fetch": {
       "command": "C:/Users/artyo/.cursor/.venv-markitdown/Scripts/python.exe",
       "args": [

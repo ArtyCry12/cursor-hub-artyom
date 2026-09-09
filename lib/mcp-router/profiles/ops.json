@@ -4,6 +4,7 @@
   "ids": [
     "memory",
     "gitnexus",
+    "model-worker",
     "notion",
     "n8n-mcp",
     "google-workspace"

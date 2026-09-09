@@ -1,6 +1,6 @@
 {
   "id": "core",
   "label": "Fast boot",
-  "ids": ["memory", "gitnexus"],
+  "ids": ["memory", "gitnexus", "model-worker"],
   "gitnexusHeapMb": 1536
 }

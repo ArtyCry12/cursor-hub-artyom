@@ -3,6 +3,8 @@
     [string]$PromptFile = '',
     [string]$Rank = '',
     [string]$Model = '',
+    [string]$ProfileId = '',
+    [string]$Stage = '',
     [ValidateSet('', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max')]
     [string]$Effort = '',
     [double]$BudgetUsd = -1,
@@ -11,10 +13,17 @@
     [int]$ExpectedTasks = 1,
     [string]$SessionId = '',
     [switch]$Sensitive,
+    [switch]$StructuredOutput,
+    [switch]$Creative,
+    [switch]$AllowUnpriced,
+    [switch]$PreviewGlobal,
+    [bool]$CursorAvailable = $true,
     [switch]$RefreshCatalog,
     [switch]$DryRun,
     [switch]$Json,
-    [string]$HubRoot = ''
+    [string]$HubRoot = '',
+    [string]$StateRoot = '',
+    [string]$CallId = ''
 )
 
 $ErrorActionPreference = 'Stop'
@@ -33,18 +42,46 @@ if (-not $SessionId) {
 if ($ExpectedStages -lt 1) { $ExpectedStages = 1 }
 if ($ExpectedTasks -lt 1) { $ExpectedTasks = 1 }
 
-Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force
+Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
 
 try {
     $catalog = @(Get-OpenRouterCatalog -HubRoot $HubRoot -Refresh:$RefreshCatalog)
-    $route = Resolve-ModelRoute -Prompt $Prompt -Rank $Rank -Model $Model -Effort $Effort -HubRoot $HubRoot -Catalog $catalog
+    if ($PreviewGlobal) {
+        $globalRoute = Resolve-GlobalModelRoute -Prompt $Prompt -Rank $Rank -ProfileId $ProfileId -Stage $Stage `
+            -Effort $Effort -CursorAvailable:$CursorAvailable -HubRoot $HubRoot -Catalog $catalog
+        $result = [PSCustomObject]@{
+            ok = [bool]$globalRoute.ok
+            preview = $true
+            route = $globalRoute
+        }
+        if ($Json) {
+            Write-Output ($result | ConvertTo-Json -Compress -Depth 20)
+            if (-not $result.ok) { exit 3 }
+        }
+        else {
+            Write-Output ($result | ConvertTo-Json -Depth 20)
+            if (-not $result.ok) { exit 3 }
+        }
+        exit 0
+    }
+    $route = Resolve-ModelRoute -Prompt $Prompt -Rank $Rank -Model $Model -Effort $Effort `
+        -ProfileId $ProfileId -HubRoot $HubRoot -Catalog $catalog
     $record = Get-OpenRouterModelRecord -Catalog $catalog -Model $route.model
-    $estimate = Get-ModelRouterCostEstimate -Prompt $Prompt -CatalogRecord $record -Effort $route.effort -MaxOutputTokens $MaxOutputTokens
-    if (-not $estimate.reliable) {
+    $effectiveInput = if ($route.profile.systemPrompt) { [string]$route.profile.systemPrompt + "`n`n" + $Prompt } else { $Prompt }
+    $estimate = Get-ModelRouterCostEstimate -Prompt $effectiveInput -CatalogRecord $record -Effort $route.effort -MaxOutputTokens $MaxOutputTokens
+    if (-not $estimate.reliable -and -not $AllowUnpriced) {
+        $result = [PSCustomObject]@{
+            ok = $false
+            code = 'unpriced_confirmation_required'
+            error = 'This model is unpriced. Ask Boss and wait for an explicit yes; no inference call was made.'
+            route = $route
+        }
+    }
+    elseif (-not $estimate.reliable -and $BudgetUsd -lt 0) {
         $result = [PSCustomObject]@{
             ok = $false
             code = 'budget_required'
-            error = 'Current price cannot be estimated. Ask Boss for a budget; no API call was made.'
+            error = 'AllowUnpriced also requires an explicit BudgetUsd; no inference call was made.'
             route = $route
         }
     }
@@ -53,12 +90,13 @@ try {
         $taskWorst = $estimate.worstUsd * $ExpectedStages
         $sessionExpected = $taskExpected * $ExpectedTasks
         $sessionWorst = $taskWorst * $ExpectedTasks
-        $session = Get-ModelRouterSession -HubRoot $HubRoot -SessionId $SessionId
+        $session = Get-ModelRouterSession -HubRoot $HubRoot -SessionId $SessionId -StateRoot $StateRoot
         $spentBefore = [double]$session.spentUsd
         $autoCap = if ($sessionWorst -le 0) { $spentBefore } else { $spentBefore + ([Math]::Ceiling($sessionWorst * 1.15 * 10000) / 10000) }
         $effectiveBudget = if ($BudgetUsd -ge 0) { $BudgetUsd } else { $autoCap }
         $receipt = [PSCustomObject]@{
             rank = $route.rank
+            allowedRanks = [string[]]$route.allowedRanks
             preferredModel = $route.preferredModel
             model = $route.model
             selectionAdjusted = $route.selectionAdjusted
@@ -87,9 +125,25 @@ try {
             inputExact = $estimate.inputExact
             maxOutputTokens = $estimate.maxOutputTokens
             fallbackModels = @($route.fallbackModels)
+            profile = [string]$route.profile.id
+            explanation = [string]$route.explanation
             sensitive = [bool]$Sensitive
+            structuredOutput = [bool]$StructuredOutput
+            creative = [bool]$Creative
+            unpricedConfirmed = [bool]$AllowUnpriced
+            cursorTools = $false
+            executionBoundary = 'text/planning only; Cursor file, shell, browser, and MCP tools remain unavailable in terminal mode'
         }
-        if ($DryRun) {
+        if ($DryRun -and ($effectiveBudget - $spentBefore) -lt $estimate.worstUsd) {
+            $result = [PSCustomObject]@{
+                ok = $false
+                dryRun = $true
+                code = 'budget_cap'
+                error = 'Dry run predicts that the stage worst-case estimate exceeds the budget.'
+                receipt = $receipt
+            }
+        }
+        elseif ($DryRun) {
             $result = [PSCustomObject]@{ ok = $true; dryRun = $true; receipt = $receipt }
         }
         elseif (($effectiveBudget - $spentBefore) -lt $estimate.worstUsd) {
@@ -103,7 +157,8 @@ try {
         else {
             $response = Invoke-ModelRouterChat -Prompt $Prompt -Route $route -Catalog $catalog `
                 -BudgetUsd $effectiveBudget -MaxOutputTokens $MaxOutputTokens -SessionId $SessionId `
-                -Sensitive:$Sensitive -HubRoot $HubRoot
+                -CallId $CallId -Sensitive:$Sensitive -StructuredOutput:$StructuredOutput -Creative:$Creative `
+                -AllowUnpriced:$AllowUnpriced -HubRoot $HubRoot -StateRoot $StateRoot
             $result = [PSCustomObject]@{ ok = $response.ok; receipt = $receipt; response = $response }
         }
     }

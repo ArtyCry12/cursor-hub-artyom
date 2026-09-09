@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "defaultProfile": "general-worker",
+  "maxContextChars": 48000,
+  "profiles": {
+    "general-worker": {
+      "label": "General OpenRouter worker",
+      "system": "You are a delegated reasoning worker. Solve only the supplied intellectual task. You do not have Cursor tools. Return evidence, decisions, or a patch proposal for the Cursor parent to apply.",
+      "qualityFloor": 0.68,
+      "roles": ["general-worker", "mid-strong", "mid-fast", "balanced-synthesis"]
+    },
+    "ecosystem-architect": {
+      "label": "Ecosystem Architect",
+      "agentFile": "agents/ecosystem-architect.md",
+      "skills": ["skills/ecosystem-architect/SKILL.md"],
+      "qualityFloor": 0.84,
+      "roles": ["planning-default", "long-context-planning", "adversarial-review", "critical-worker"]
+    },
+    "dev-os-research": {
+      "label": "Dev OS Research",
+      "agentFile": "agents/dev-os-research.md",
+      "qualityFloor": 0.78,
+      "roles": ["planning-default", "balanced-synthesis", "long-context-planning"]
+    },
+    "adversarial-hub-auditor": {
+      "label": "Adversarial Hub Auditor",
+      "agentFile": "agents/adversarial-hub-auditor.md",
+      "qualityFloor": 0.82,
+      "roles": ["adversarial-review", "critical-worker", "mid-strong"]
+    },
+    "temporary-worker": {
+      "label": "Temporary delegated worker",
+      "system": "You are an ephemeral delegated worker. Follow the requested role, do not claim tools you do not have, and return a concise result with assumptions and verification needs.",
+      "qualityFloor": 0.7,
+      "roles": ["general-worker", "mid-fast", "mid-strong", "balanced-synthesis"]
+    }
+  }
+}

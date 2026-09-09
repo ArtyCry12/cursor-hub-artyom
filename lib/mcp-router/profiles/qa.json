@@ -4,6 +4,7 @@
   "ids": [
     "memory",
     "gitnexus",
+    "model-worker",
     "playwright"
   ],
   "gitnexusHeapMb": 1536

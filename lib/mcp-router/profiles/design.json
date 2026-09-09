@@ -1,6 +1,6 @@
 {
   "id": "design",
   "label": "Open Design / Stitch / 21st / docs libraries",
-  "ids": ["memory", "gitnexus", "open-design", "stitch", "21st", "context7"],
+  "ids": ["memory", "gitnexus", "model-worker", "open-design", "stitch", "21st", "context7"],
   "gitnexusHeapMb": 1536
 }

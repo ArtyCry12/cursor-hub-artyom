@@ -12,15 +12,16 @@ alwaysApply: true
 
 ## Явный rank trigger
 
-Если промпт содержит `R1.5`, `R2` или `R3`, для text/planning используй `commands/model-route.ps1` с исходным промптом.
+Если промпт содержит `R1.5`, `R2` или `R3` (включая пул `R1.5, R2`), Cursor остаётся родителем tools.
 
-1. Обнови live catalog/prices.
-2. Выбери model-specific effort.
-3. Рассчитай expected/worst cost и auto cap.
-4. Если цену рассчитать нельзя — спроси бюджет и не вызывай API.
-5. Верни receipt с фактической моделью, effort, fallback и `usage.cost`.
+1. Вызови MCP `model-worker` `route_preview` / `delegate` или terminal `commands/model-route.ps1`.
+2. Обнови live catalog/prices и circuit-breaker health.
+3. Выбери model-specific effort.
+4. Зарезервируй local budget и проверь shared-key remainder.
+5. Unpriced-модель — только после отдельного «да» Boss.
+6. Верни receipt с target, model, effort, fallback и `usage.cost`.
 
-R1.5: планирование вместо R1 в подходящих задачах. R2/R3: text workers. Они не являются Cursor Task subagents и не получают file/shell/browser/MCP tools.
+R1.5: planning. R2: paid workers. R3: verified free allowlist. OpenRouter workers не получают Cursor tools.
 
 ## Effort и fallback
 

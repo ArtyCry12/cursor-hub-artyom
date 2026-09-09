@@ -17,13 +17,14 @@ SoT: `ai-tracking/model-ladder.json`. Runtime history: `ai-tracking/model-router
 
 ## When to run
 
-An explicit `R1.5`, `R2`, or `R3` in the prompt selects this router for text/planning:
+An explicit `R1.5`, `R2`, or `R3` (including mixed pools) selects this router:
 
-- R1.5: planning replacement — GLM 5.3, Grok 4.6, Qwen3.8 Max, Muse Spark.
+- Prefer MCP `model-worker` inside Cursor; keep Cursor as the tool parent.
+- R1.5: planning — GLM 5.3, Grok 4.6, Qwen3.8 Max, Muse Spark.
 - R2: paid workers — Luna Pro (`max` only), GLM 5.2, DeepSeek Pro/Flash, GLM Flash, Gemini Flash.
-- R3: free text/TTS fallbacks that are currently present in the live catalog.
+- R3: verified live `:free` text allowlist only.
 
-The rank does not turn an OpenRouter model into a Cursor Task subagent. It has no Cursor file, shell, browser, or MCP tools.
+OpenRouter workers never receive Cursor file, shell, browser, or MCP tools.
 
 ## Budget and effort
 

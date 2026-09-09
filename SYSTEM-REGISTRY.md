@@ -175,16 +175,17 @@ Default profile: MD + EU. Universal via `--profile eu|us|generic`. Not legal adv
 | Skill | `skills/openrouter-free/SKILL.md` |
 | Wrapper | `skills/openrouter-free/scripts/openrouter.ps1` |
 | Router engine | `lib/model-router/ModelRouter.psm1` |
+| Worker MCP | `lib/model-router/mcp/server.mjs` (`model-worker`) |
 | Ranked command | `commands/model-route.ps1` |
 | Ranked health | `commands/model-router-health.ps1` |
 | Rule (always-on) | `rules/openrouter-free-routing.mdc` |
 | Squad override (archived) | `skills/_archive/squad/project-squad/reference/model-map.md` |
-| Test | `commands/openrouter-free-test.ps1` |
-| Health | `ai-tracking/model-router-health.json` + legacy `ai-tracking/openrouter-free-health.json` |
-| Route | `openrouter-free` in `lib/task-router/routes.json` (R1.5/R2/R3 trigger) |
+| Test | `commands/model-router-contract-test.ps1` + MCP/hook/shadow suites |
+| Health | `.cache/model-router/` runtime + legacy `ai-tracking/openrouter-free-health.json` |
+| Route | `openrouter-free` in `lib/task-router/routes.json` (R1.5/R2/R3 pool) |
 | AGENTS.md | `<!-- openrouter-free:start -->` |
 
-Explicit R1.5/R2/R3 → `commands/model-route.ps1` for text/planning. Paid calls use live prices, personalized effort, auto budget cap and local fallback. Legacy STT/`-Tier mid` keep `-BossYes`. The terminal route works after Cursor usage is exhausted but has no file tools. Do not Override OpenAI Base URL. Key: `OPENROUTER_API_KEY` user env.
+Explicit R1.5/R2/R3 → MCP `model-worker` under Cursor parent, or terminal `commands/model-route.ps1` after usage exhaustion. Paid calls use live prices, personalized effort, atomic local caps, shared-key remainder, and circuit-breaker fallback. Unpriced models need Boss yes. R3 uses verified free allowlist. Do not Override OpenAI Base URL. Key: `OPENROUTER_API_KEY` user env.
 
 ## Skills / MCP Session 2 artifacts
 

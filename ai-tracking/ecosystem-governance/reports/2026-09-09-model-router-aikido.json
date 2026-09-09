@@ -1,0 +1,15 @@
+{
+  "scannedAt": "2026-09-09T15:10:00.000Z",
+  "tool": "aikido_full_scan",
+  "repository": "cursor-hub-artyom",
+  "files": [
+    "lib/model-router/mcp/server.mjs",
+    "commands/register-model-worker-mcp.mjs"
+  ],
+  "issues": [],
+  "notes": [
+    "No SAST/secrets findings on scanned first-party JS.",
+    "Checkov IaC binary missing (ENOENT); not treated as a code finding.",
+    "PowerShell engine covered by PS5/PS7 contract, concurrency, legacy, and hook suites."
+  ]
+}

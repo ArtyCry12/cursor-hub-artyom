@@ -78,11 +78,11 @@ Primary: **`user-memory` MCP** → **`AGENTS.md`** → **`ai-tracking/`** (Dev O
 <!-- openrouter-free:start -->
 ## OpenRouter models (cost routing)
 
-Canon: [`ai-tracking/openrouter-free.md`](ai-tracking/openrouter-free.md) · ladder [`ai-tracking/model-ladder.json`](ai-tracking/model-ladder.json) · engine `lib/model-router/ModelRouter.psm1` · command `commands/model-route.ps1` · health `commands/model-router-health.ps1`.
+Canon: [`ai-tracking/openrouter-free.md`](ai-tracking/openrouter-free.md) · ladder [`ai-tracking/model-ladder.json`](ai-tracking/model-ladder.json) · engine `lib/model-router/ModelRouter.psm1` · MCP `model-worker` · command `commands/model-route.ps1` · health `commands/model-router-health.ps1`.
 
 Key: Windows user env `OPENROUTER_API_KEY`. Do **not** Override OpenAI Base URL.
 
-Explicit `R1.5/R2/R3` → OpenRouter text/planning router with live prices, model-specific effort, auto budget cap and health-aware fallback. This is not a Cursor Task and has no file tools. Terminal routing remains usable after Cursor usage is exhausted. Legacy STT/`-Tier mid` retain `-BossYes`. OpenCode is a future option only; do not install now.
+Explicit `R1.5/R2/R3` → Cursor-parent + MCP worker or terminal fallback. Allowed ranks are a pool. Local hard caps, circuit breaker, and verified R3 allowlist apply. OpenRouter workers have no Cursor tools. OpenCode is a future option only; do not install now.
 <!-- openrouter-free:end -->
 
 <!-- seo-geo-aio:start -->

@@ -1,4 +1,4 @@
-# OpenRouter wrapper (free + mid). Never prints the API key.
+﻿# OpenRouter wrapper (free + mid). Never prints the API key.
 param(
   [Parameter(Mandatory)]
   [ValidateSet('chat', 'tts', 'stt', 'ping')]
@@ -10,6 +10,11 @@ param(
   [ValidateSet('free', 'mid')]
   [string]$Tier = 'free',
   [string]$Model,
+  [double]$BudgetUsd = -1,
+  [int]$MaxOutputTokens = 4096,
+  [string]$SessionId = 'legacy',
+  [switch]$Sensitive,
+  [switch]$DryRun,
   [switch]$NoPlay,
   [switch]$BossYes
 )
@@ -109,6 +114,22 @@ function Get-Rank2SlugSet {
   return $set
 }
 
+function Resolve-ChatRank {
+  if (-not $Model) {
+    if ($Tier -eq 'mid') { return 'R2' }
+    return 'R3'
+  }
+  $ladder = Get-Content -LiteralPath $LadderPath -Raw -Encoding UTF8 | ConvertFrom-Json
+  foreach ($rank in @('rank1_5', 'rank2', 'rank3')) {
+    if ($ladder.$rank.models.PSObject.Properties[$Model]) {
+      if ($rank -eq 'rank1_5') { return 'R1.5' }
+      if ($rank -eq 'rank2') { return 'R2' }
+      return 'R3'
+    }
+  }
+  return $(if ($Tier -eq 'mid') { 'R2' } else { 'R3' })
+}
+
 function Test-NeedsBossYes {
   if ($Action -eq 'stt') { return $true }
   if ($Tier -eq 'mid') { return $true }
@@ -132,8 +153,12 @@ function Assert-BossYesOrExit {
 
 Assert-BossYesOrExit
 
-$key = Get-OpenRouterKey
-$headers = Get-Headers $key
+$key = $null
+$headers = $null
+if (-not ($Action -eq 'chat' -and $DryRun)) {
+  $key = Get-OpenRouterKey
+  $headers = Get-Headers $key
+}
 
 if ($Action -eq 'ping') {
   try {
@@ -194,49 +219,72 @@ $text = Get-UserText
 if ([string]::IsNullOrWhiteSpace($text)) { throw 'Empty prompt.' }
 
 if ($Action -eq 'chat') {
-  if ($Model) {
-    $tryModels = @($Model)
-  }
-  elseif ($Tier -eq 'mid') {
-    $tryModels = Get-MidChatModels
-  }
-  else {
-    $tryModels = Get-FreeTextModels
-  }
-  $lastErr = $null
-  foreach ($m in $tryModels) {
-    $body = @{
-      model    = $m
-      messages = @(@{ role = 'user'; content = $text })
-    }
-    try {
-      $parsed = Invoke-JsonPost 'https://openrouter.ai/api/v1/chat/completions' $headers $body 120
-      $outText = ''
-      if ($parsed.choices -and $parsed.choices.Count -gt 0) {
-        $outText = [string]$parsed.choices[0].message.content
-      }
+  Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
+  try {
+    $catalog = @(Get-OpenRouterCatalog -HubRoot $HubRoot)
+    $rank = Resolve-ChatRank
+    $route = Resolve-ModelRoute -Prompt $text -Rank $rank -Model $Model -HubRoot $HubRoot -Catalog $catalog
+    if ($DryRun) {
+      $record = Get-OpenRouterModelRecord -Catalog $catalog -Model $route.model
+      $estimate = Get-ModelRouterCostEstimate -Prompt ([string]$route.profile.systemPrompt + "`n`n" + $text) `
+        -CatalogRecord $record -Effort $route.effort -MaxOutputTokens $MaxOutputTokens `
+        -Model $route.model -HubRoot $HubRoot
+      $effectiveBudget = if ($BudgetUsd -ge 0) { $BudgetUsd } else { $estimate.autoCapUsd }
+      $ok = $estimate.reliable -and $effectiveBudget -ge $estimate.worstUsd
       Write-Result @{
-        ok     = $true
+        ok = $ok
+        dryRun = $true
         action = 'chat'
-        tier   = $Tier
-        model  = [string]$parsed.model
-        text   = $outText
+        tier = $Tier
+        rank = $route.rank
+        model = $route.model
+        effort = $route.effort
+        fallbackModels = @($route.fallbackModels)
+        estimate = $estimate
+        budgetUsd = $effectiveBudget
+        code = if ($ok) { 'ready' } elseif (-not $estimate.reliable) { 'unpriced_confirmation_required' } else { 'budget_cap' }
+      }
+      exit $(if ($ok) { 0 } else { 3 })
+    }
+    $response = Invoke-ModelRouterChat -Prompt $text -Route $route -Catalog $catalog -BudgetUsd $BudgetUsd `
+      -MaxOutputTokens $MaxOutputTokens -SessionId $SessionId -Sensitive:$Sensitive -HubRoot $HubRoot
+    if ($response.ok) {
+      Write-Result @{
+        ok = $true
+        action = 'chat'
+        tier = $Tier
+        rank = $route.rank
+        model = [string]$response.model
+        effort = [string]$response.effort
+        text = [string]$response.text
+        usage = $response.usage
+        actualUsd = $response.usageDetails.cost
+        fallbackUsed = [bool]$response.fallbackUsed
       }
       exit 0
     }
-    catch {
-      $lastErr = "$m : $($_.Exception.Message)"
-      # R3 free 429 = brief retry; R2 429 left to caller (stop-ask).
-      if ($Tier -eq 'free' -and $lastErr -match '429') { Start-Sleep -Seconds 2 }
+    Write-Result @{
+      ok = $false
+      action = 'chat'
+      tier = $Tier
+      rank = $route.rank
+      model = $route.model
+      code = $response.code
+      error = $response.error
+      errors = @($response.errors)
     }
+    exit 1
   }
-  Write-Result @{
-    ok     = $false
-    action = 'chat'
-    tier   = $Tier
-    error  = $lastErr
+  catch {
+    Write-Result @{
+      ok = $false
+      action = 'chat'
+      tier = $Tier
+      code = 'router_error'
+      error = $_.Exception.Message
+    }
+    exit 1
   }
-  exit 1
 }
 
 # tts

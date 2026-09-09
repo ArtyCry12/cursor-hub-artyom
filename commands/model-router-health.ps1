@@ -1,15 +1,18 @@
 ﻿param(
     [switch]$ProbePaid,
+    [switch]$ProbeR3,
+    [int]$R3MaxCandidates = 5,
     [double]$BudgetUsd = -1,
     [int]$MaxOutputTokens = 16,
     [switch]$RefreshCatalog,
     [switch]$Json,
-    [string]$HubRoot = ''
+    [string]$HubRoot = '',
+    [string]$StateRoot = ''
 )
 
 $ErrorActionPreference = 'Stop'
 if (-not $HubRoot) { $HubRoot = Split-Path $PSScriptRoot -Parent }
-Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force
+Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
 
 $catalog = @(Get-OpenRouterCatalog -HubRoot $HubRoot -Refresh:$RefreshCatalog)
 $ladder = Get-ModelRouterLadder -HubRoot $HubRoot
@@ -26,13 +29,21 @@ foreach ($rankKey in @('rank1_5', 'rank2')) {
         if (@($config.modality) -notcontains 'text') { continue }
         $record = Get-OpenRouterModelRecord -Catalog $catalog -Model $model
         if (-not $record) {
-            Write-ModelRouterHealthEvent -HubRoot $HubRoot -Model $model -Status 'catalog-missing' -Error 'not present in current catalog'
-            $checks.Add([PSCustomObject]@{ rank = $rankKey; model = $model; catalog = 'missing'; probed = $false })
+            Write-ModelRouterHealthEvent -HubRoot $HubRoot -Model $model -Status 'catalog-missing' `
+                -Category 'catalog-missing' -Error 'not present in current catalog' -StateRoot $StateRoot
+            $checks.Add([PSCustomObject]@{
+                rank = $rankKey
+                model = $model
+                catalog = 'missing'
+                probed = $false
+            })
             continue
         }
         $requested = if ($config.PSObject.Properties['defaultEffort']) { [string]$config.defaultEffort } else { 'medium' }
         $effort = Resolve-ModelRouterEffort -ModelConfig $config -CatalogRecord $record -Requested $requested
-        $estimate = Get-ModelRouterCostEstimate -Prompt $prompt -CatalogRecord $record -Effort $effort.selected -MaxOutputTokens $MaxOutputTokens
+        $estimate = Get-ModelRouterCostEstimate -Prompt $prompt -CatalogRecord $record `
+            -Effort $effort.selected -MaxOutputTokens $MaxOutputTokens -Model $model `
+            -HubRoot $HubRoot -StateRoot $StateRoot
         $aggregateWorst += $estimate.worstUsd
         $probeQueue.Add([PSCustomObject]@{
             rank = $rankKey
@@ -40,6 +51,7 @@ foreach ($rankKey in @('rank1_5', 'rank2')) {
             role = [string]$config.role
             effort = $effort.selected
             estimate = $estimate
+            r3 = $false
         })
         $checks.Add([PSCustomObject]@{
             rank = $rankKey
@@ -54,12 +66,39 @@ foreach ($rankKey in @('rank1_5', 'rank2')) {
     }
 }
 
+if ($ProbeR3) {
+    $r3Candidates = @(Get-ModelRouterDynamicR3Candidates -Catalog $catalog | Select-Object -First $R3MaxCandidates)
+    foreach ($model in $r3Candidates) {
+        $record = Get-OpenRouterModelRecord -Catalog $catalog -Model $model
+        $estimate = Get-ModelRouterCostEstimate -Prompt $prompt -CatalogRecord $record -Effort none `
+            -MaxOutputTokens $MaxOutputTokens -Model $model -HubRoot $HubRoot -StateRoot $StateRoot
+        $probeQueue.Add([PSCustomObject]@{
+            rank = 'rank3'
+            model = $model
+            role = 'general-worker'
+            effort = 'none'
+            estimate = $estimate
+            r3 = $true
+        })
+        $checks.Add([PSCustomObject]@{
+            rank = 'rank3'
+            model = $model
+            catalog = 'quarantine'
+            effort = 'none'
+            promptPerMillion = $estimate.promptPerMillion
+            completionPerMillion = $estimate.completionPerMillion
+            worstUsd = $estimate.worstUsd
+            probed = $false
+        })
+    }
+}
+
 $autoCap = if ($aggregateWorst -le 0) { 0.0 } else { [Math]::Ceiling($aggregateWorst * 1.2 * 10000) / 10000 }
 $effectiveBudget = if ($BudgetUsd -ge 0) { $BudgetUsd } else { $autoCap }
 $results = New-Object System.Collections.Generic.List[object]
 
-if ($ProbePaid) {
-    if ($aggregateWorst -gt $effectiveBudget) {
+if ($ProbePaid -or $ProbeR3) {
+    if ($ProbePaid -and $aggregateWorst -gt $effectiveBudget) {
         $output = [PSCustomObject]@{
             ok = $false
             code = 'budget_cap'
@@ -68,11 +107,18 @@ if ($ProbePaid) {
             budgetUsd = $effectiveBudget
             checks = [object[]]$checks
         }
-        Write-Output ($output | ConvertTo-Json -Compress -Depth 14)
+        Write-Output ($output | ConvertTo-Json -Compress -Depth 20)
         exit 3
     }
-    $sessionId = "health-$([DateTime]::UtcNow.ToString('yyyyMMdd-HHmmss'))"
+    $sessionId = "health-$([DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss'))"
     foreach ($probe in $probeQueue) {
+        if (-not $ProbePaid -and -not $probe.r3) { continue }
+        $profile = Get-ModelRouterAgentProfile -ProfileId 'general-worker' -HubRoot $HubRoot
+        $candidate = [PSCustomObject]@{
+            rank = $probe.rank
+            model = $probe.model
+            effortRequested = $probe.effort
+        }
         $route = [PSCustomObject]@{
             rank = $probe.rank
             model = $probe.model
@@ -80,14 +126,25 @@ if ($ProbePaid) {
             effort = $probe.effort
             effortRequested = $probe.effort
             fallbackModels = @($probe.model)
+            fallbackCandidates = @($candidate)
+            profile = $profile
         }
+        $probeBudget = if ($probe.r3 -and $effectiveBudget -le 0) { 0.0 } else { $effectiveBudget }
         $response = Invoke-ModelRouterChat -Prompt $prompt -Route $route -Catalog $catalog `
-            -BudgetUsd $effectiveBudget -MaxOutputTokens $MaxOutputTokens -SessionId $sessionId -HubRoot $HubRoot
+            -BudgetUsd $probeBudget -MaxOutputTokens $MaxOutputTokens -SessionId $sessionId `
+            -HubRoot $HubRoot -StateRoot $StateRoot
+        $qualityPassed = [bool]$response.ok -and ([string]$response.text).Trim() -eq 'OK'
+        if ($probe.r3) {
+            Set-ModelRouterR3Verification -HubRoot $HubRoot -Model $probe.model -Verified:$qualityPassed `
+                -Reason $(if ($qualityPassed) { 'metadata+smoke+exact-output+deny-training' } else { [string]$response.code }) `
+                -StateRoot $StateRoot
+        }
         $results.Add([PSCustomObject]@{
             rank = $probe.rank
             model = $probe.model
             effort = $probe.effort
             ok = [bool]$response.ok
+            qualityPassed = $qualityPassed
             actualModel = if ($response.ok) { [string]$response.model } else { $null }
             actualUsd = if ($response.ok -and $response.usage) { $response.usage.cost } else { $null }
             code = if ($response.ok) { $null } else { [string]$response.code }
@@ -98,27 +155,28 @@ if ($ProbePaid) {
 
 $checkItems = [object[]]$checks
 $resultItems = [object[]]$results
-$missingCount = 0
-foreach ($check in $checkItems) { if ($check.catalog -eq 'missing') { $missingCount++ } }
-$failedCount = 0
-foreach ($result in $resultItems) { if (-not $result.ok) { $failedCount++ } }
-
+$missingCount = @($checkItems | Where-Object { $_.catalog -eq 'missing' }).Count
+$failedCount = @($resultItems | Where-Object { -not $_.ok }).Count
+$verifiedR3 = @(Get-ModelRouterVerifiedR3Models -HubRoot $HubRoot -StateRoot $StateRoot)
 $output = [PSCustomObject]@{
-    ok = ($missingCount -eq 0) -and (-not $ProbePaid -or $failedCount -eq 0)
-    catalogCheckedAt = [DateTime]::UtcNow.ToString('o')
+    ok = ($missingCount -eq 0) -and (-not ($ProbePaid -or $ProbeR3) -or $failedCount -eq 0)
+    catalogCheckedAt = [DateTimeOffset]::UtcNow.ToString('o')
     probePaid = [bool]$ProbePaid
+    probeR3 = [bool]$ProbeR3
     modelCount = $checks.Count
     aggregateWorstUsd = [Math]::Round($aggregateWorst, 8)
     budgetUsd = $effectiveBudget
+    verifiedR3 = [string[]]$verifiedR3
+    healthState = Get-ModelRouterHealthPath -HubRoot $HubRoot -StateRoot $StateRoot
     checks = $checkItems
     results = $resultItems
 }
 
-if ($Json -or $ProbePaid) {
-    Write-Output ($output | ConvertTo-Json -Compress -Depth 14)
+if ($Json -or $ProbePaid -or $ProbeR3) {
+    Write-Output ($output | ConvertTo-Json -Compress -Depth 20)
 }
 else {
-    Write-Output "R1.5/R2 metadata: $($checks.Count) models; aggregate probe worst=$($output.aggregateWorstUsd) USD; auto-cap=$effectiveBudget USD"
+    Write-Output "R1.5/R2 metadata: $($checks.Count) models; aggregate worst=$($output.aggregateWorstUsd) USD; verified R3=$($verifiedR3.Count)"
     $checks | Format-Table rank, model, catalog, effort, promptPerMillion, completionPerMillion
 }
 if (-not $output.ok) { exit 1 }

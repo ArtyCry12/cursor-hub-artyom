@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 2,
-  "updatedAt": "2026-09-09T12:05:00.000Z",
-  "notes": "Catalog SoT. Live prices and supported parameters are refreshed from OpenRouter before paid activation. Runtime health is historical: one failure never permanently bans a model.",
+  "schemaVersion": 3,
+  "updatedAt": "2026-09-09T14:45:00.000Z",
+  "notes": "Static model policy only. Live catalog metadata is refreshed from OpenRouter. Mutable health, calibration, R3 allowlist, and session ledgers live under .cache/model-router and are never committed.",
   "aliases": {
     "boss.top": "rank1.top",
     "boss.default": "rank1.daily",
@@ -191,11 +191,15 @@
     }
   },
   "rank3": {
-    "textOrder": [
-      "z-ai/glm-5.2:free",
-      "minimax/minimax-m3:free",
-      "thinkingmachines/inkling:free"
-    ],
+    "policy": "dynamic-verified-free-text-allowlist",
+    "discovery": {
+      "slugSuffix": ":free",
+      "requiredInput": "text",
+      "requiredOutput": "text",
+      "gates": ["catalog", "smoke", "exact-output", "deny-training"],
+      "runtimeAllowlist": ".cache/model-router/r3-allowlist.json"
+    },
+    "textOrder": [],
     "models": {
       "z-ai/glm-5.2:free": { "status": "catalog-missing", "modality": ["text"], "role": "text-primary", "probedAt": "2026-09-09", "note": "Missing from live catalog; retain for recheck" },
       "minimax/minimax-m3:free": { "status": "catalog-missing", "modality": ["text", "image-in", "video-in"], "role": "multimodal", "probedAt": "2026-09-09", "note": "Missing from live catalog; retain for recheck" },

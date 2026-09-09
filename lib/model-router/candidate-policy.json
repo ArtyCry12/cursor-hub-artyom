@@ -37,6 +37,7 @@
   "roleAliases": {
     "planning": ["planning-default", "long-context-planning", "balanced-synthesis"],
     "architecture": ["long-context-planning", "planning-default", "critical-worker"],
+    "critical": ["critical-worker"],
     "review": ["adversarial-review", "critical-worker", "mid-strong"],
     "batch": ["mid-fast"],
     "multimodal": ["multimodal-fast"],

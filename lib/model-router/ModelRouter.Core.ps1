@@ -190,6 +190,9 @@ function Get-ModelRouterIntent {
         [string]$Stage = ''
     )
     $normalized = ($Prompt + ' ' + $Stage).ToLowerInvariant()
+    if ($normalized -match '(?<![\p{L}\p{N}_])(critical|maximum|критич[\p{L}]*|максимальн[\p{L}]*)(?![\p{L}\p{N}_])') {
+        return 'critical'
+    }
     if ($normalized -match '(?<![\p{L}\p{N}_])(adversarial|review|audit|critic|risk|аудит[\p{L}]*|ревью|риск[\p{L}]*|оспор[\p{L}]*)(?![\p{L}\p{N}_])') {
         return 'review'
     }
@@ -219,6 +222,7 @@ function Get-RequestedEffort {
     }
     $intent = Get-ModelRouterIntent -Prompt $Prompt
     switch ($intent) {
+        'critical' { return 'max' }
         'review' { return 'high' }
         'architecture' { return 'high' }
         'planning' { return 'high' }
@@ -406,20 +410,34 @@ function Get-ModelRouterFallbacks {
 function Measure-ModelRouterInput {
     param(
         [Parameter(Mandatory)][string]$Prompt,
-        [int]$ExactTokens = 0
+        [int]$ExactTokens = 0,
+        [string]$Model = '',
+        [string]$HubRoot = '',
+        [string]$StateRoot = ''
     )
     if ($ExactTokens -gt 0) {
-        return [PSCustomObject]@{ tokens = $ExactTokens; exact = $true; method = 'provided'; uncertainty = 0.0 }
+        return [PSCustomObject]@{
+            tokens = $ExactTokens
+            baseTokens = $ExactTokens
+            exact = $true
+            method = 'provided'
+            uncertainty = 0.0
+            calibrationMultiplier = 1.0
+        }
     }
     $bytes = [Text.UTF8Encoding]::new($false).GetByteCount($Prompt)
     $characterEstimate = [Math]::Ceiling($Prompt.Length / 2.5)
     $byteEstimate = [Math]::Ceiling(($bytes / 3.2) * 1.25)
-    $tokens = [Math]::Max(1, [Math]::Max($characterEstimate, $byteEstimate))
+    $baseTokens = [Math]::Max(1, [Math]::Max($characterEstimate, $byteEstimate))
+    $multiplier = Get-ModelRouterCalibrationMultiplier -Model $Model -HubRoot $HubRoot -StateRoot $StateRoot
+    $tokens = [Math]::Ceiling($baseTokens * $multiplier)
     return [PSCustomObject]@{
         tokens = [int]$tokens
+        baseTokens = [int]$baseTokens
         exact = $false
-        method = 'utf8-byte-conservative'
+        method = 'utf8-byte-conservative+model-p95'
         uncertainty = 0.25
+        calibrationMultiplier = $multiplier
     }
 }
 
@@ -483,9 +501,13 @@ function Get-ModelRouterCostEstimate {
         [int]$MaxOutputTokens = 0,
         [int]$InputTokens = 0,
         [int]$CachedInputTokens = 0,
-        [int]$CacheWriteTokens = 0
+        [int]$CacheWriteTokens = 0,
+        [string]$Model = '',
+        [string]$HubRoot = '',
+        [string]$StateRoot = ''
     )
-    $input = Measure-ModelRouterInput -Prompt $Prompt -ExactTokens $InputTokens
+    $input = Measure-ModelRouterInput -Prompt $Prompt -ExactTokens $InputTokens -Model $Model `
+        -HubRoot $HubRoot -StateRoot $StateRoot
     if ($MaxOutputTokens -le 0) { $MaxOutputTokens = Get-DefaultOutputCap -Effort $Effort }
     $pricing = Get-EffectiveModelPricing -CatalogRecord $CatalogRecord -InputTokens $input.tokens
     $ratios = @{ none = 0.0; minimal = 0.1; low = 0.2; medium = 0.5; high = 0.8; xhigh = 0.95; max = 0.95 }
@@ -512,9 +534,11 @@ function Get-ModelRouterCostEstimate {
     $autoCap = if ($worst -le 0) { 0.0 } else { [Math]::Ceiling($worst * 1.15 * 10000) / 10000 }
     return [PSCustomObject]@{
         inputTokens = $input.tokens
+        inputBaseTokens = $input.baseTokens
         inputExact = $input.exact
         inputMethod = $input.method
         inputUncertainty = $input.uncertainty
+        calibrationMultiplier = $input.calibrationMultiplier
         cachedInputTokens = $CachedInputTokens
         cacheWriteTokens = $CacheWriteTokens
         maxOutputTokens = $MaxOutputTokens
@@ -679,7 +703,8 @@ function Get-ModelRouterOpenRouterCandidates {
                 $rejected.Add([PSCustomObject]@{ target = 'openrouter-worker'; rank = $rankKey; model = [string]$model; reason = 'mandatory-reasoning-unsupported' })
                 continue
             }
-            $estimate = Get-ModelRouterCostEstimate -Prompt ($Profile.systemPrompt + "`n" + $Prompt) -CatalogRecord $record -Effort $effort.selected
+            $estimate = Get-ModelRouterCostEstimate -Prompt ($Profile.systemPrompt + "`n" + $Prompt) `
+                -CatalogRecord $record -Effort $effort.selected -Model ([string]$model) -HubRoot $HubRoot
             $costScore = if (-not $estimate.reliable) { 0.0 } else { 1.0 / (1.0 + ($estimate.expectedUsd * 200.0)) }
             $score = ($quality * [double]$weights.quality) +
                 ($roleScore * [double]$weights.role) +
@@ -765,6 +790,7 @@ function Resolve-GlobalModelRoute {
         [string]$Stage = '',
         [string]$Effort = '',
         [bool]$CursorAvailable = $true,
+        [bool]$RequiresCursorTools = $false,
         [switch]$OpenRouterOnly,
         [string]$HubRoot = '',
         [object[]]$Catalog
@@ -780,6 +806,40 @@ function Resolve-GlobalModelRoute {
     }
     else {
         [string[]]@('rank1_5', 'rank2', 'rank3')
+    }
+    if ($RequiresCursorTools) {
+        if (-not $CursorAvailable) {
+            return [PSCustomObject]@{
+                ok = $false
+                code = 'cursor_tools_unavailable'
+                allowedRanks = [string[]]$allowedRanks
+                explicitRanks = ($explicitRanks.Count -gt 0)
+                profile = $profile
+                candidates = [object[]]@()
+                rejected = [object[]]@()
+            }
+        }
+        return [PSCustomObject]@{
+            ok = $true
+            target = 'cursor-parent'
+            rank = 'cursor'
+            model = $null
+            role = 'tool-execution'
+            effort = $null
+            allowedRanks = [string[]]$allowedRanks
+            explicitRanks = ($explicitRanks.Count -gt 0)
+            profile = $profile
+            selected = [PSCustomObject]@{
+                target = 'cursor-parent'
+                rank = 'cursor'
+                model = $null
+                role = 'tool-execution'
+                score = 100.0
+            }
+            candidates = [object[]]@()
+            rejected = [object[]]@()
+            explanation = 'Cursor tools are required; OpenRouter workers may only provide a separate reasoning stage.'
+        }
     }
     $requestedEffort = Get-RequestedEffort -Prompt ($Prompt + ' ' + $Stage) -Requested $Effort
     $candidates = New-Object System.Collections.Generic.List[object]

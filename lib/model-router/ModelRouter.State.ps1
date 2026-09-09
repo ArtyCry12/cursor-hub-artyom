@@ -310,6 +310,30 @@ function Enter-ModelRouterCircuit {
     }
 }
 
+function Exit-ModelRouterCircuitProbe {
+    param(
+        [Parameter(Mandatory)][string]$HubRoot,
+        [Parameter(Mandatory)][string]$Model,
+        [string]$StateRoot = ''
+    )
+    $path = Get-ModelRouterHealthPath -HubRoot $HubRoot -StateRoot $StateRoot
+    $lock = Open-ModelRouterLock -Path "$path.lock"
+    try {
+        $state = Get-ModelRouterHealthState -HubRoot $HubRoot -StateRoot $StateRoot
+        $property = $state.models.PSObject.Properties[$Model]
+        if (-not $property) { return }
+        $entry = $property.Value
+        if ([string]$entry.circuit -eq 'half-open') {
+            $entry.circuit = 'open'
+            $entry.halfOpenInFlight = $false
+            Write-ModelRouterAtomicJson -Path $path -Value $state
+        }
+    }
+    finally {
+        $lock.Dispose()
+    }
+}
+
 function Get-ModelRouterSessionPath {
     param(
         [Parameter(Mandatory)][string]$SessionId,
@@ -458,6 +482,69 @@ function Undo-ModelRouterBudgetReservation {
         $session.reservedUsd = [Math]::Max(0.0, [Math]::Round(([double]$session.reservedUsd - $reserved), 8))
         Save-ModelRouterSession -HubRoot $HubRoot -Session $session -StateRoot $StateRoot
         return $session
+    }
+    finally {
+        $lock.Dispose()
+    }
+}
+
+function Get-ModelRouterCalibrationPath {
+    param(
+        [string]$HubRoot = '',
+        [string]$StateRoot = ''
+    )
+    return (Join-Path (Get-ModelRouterRuntimeRoot -HubRoot $HubRoot -StateRoot $StateRoot) 'calibration.json')
+}
+
+function Get-ModelRouterCalibrationMultiplier {
+    param(
+        [string]$Model = '',
+        [string]$HubRoot = '',
+        [string]$StateRoot = ''
+    )
+    if (-not $Model) { return 1.0 }
+    $state = Read-ModelRouterJson -Path (Get-ModelRouterCalibrationPath -HubRoot $HubRoot -StateRoot $StateRoot)
+    if (-not $state -or -not $state.models) { return 1.0 }
+    $property = $state.models.PSObject.Properties[$Model]
+    if (-not $property) { return 1.0 }
+    return [Math]::Max(1.0, [Math]::Min(3.0, [double]$property.Value.multiplier))
+}
+
+function Update-ModelRouterCalibration {
+    param(
+        [Parameter(Mandatory)][string]$HubRoot,
+        [Parameter(Mandatory)][string]$Model,
+        [Parameter(Mandatory)][int]$EstimatedBaseTokens,
+        [Parameter(Mandatory)][int]$ActualPromptTokens,
+        [string]$StateRoot = ''
+    )
+    if ($EstimatedBaseTokens -le 0 -or $ActualPromptTokens -le 0) { return }
+    $path = Get-ModelRouterCalibrationPath -HubRoot $HubRoot -StateRoot $StateRoot
+    $lock = Open-ModelRouterLock -Path "$path.lock"
+    try {
+        $state = Read-ModelRouterJson -Path $path -Default ([PSCustomObject]@{
+            schemaVersion = 1
+            updatedAt = $null
+            models = [PSCustomObject]@{}
+        })
+        $property = $state.models.PSObject.Properties[$Model]
+        [object[]]$ratios = if ($property) { @($property.Value.ratios) } else { @() }
+        $ratios = @($ratios + [Math]::Round(($ActualPromptTokens / [double]$EstimatedBaseTokens), 6))
+        if ($ratios.Count -gt 50) { $ratios = @($ratios | Select-Object -Last 50) }
+        [object[]]$ordered = @($ratios | Sort-Object)
+        $count = @($ordered).Count
+        $index = [Math]::Min($count - 1, [Math]::Floor(($count - 1) * 0.95))
+        $p95 = [double]$ordered[$index]
+        $entry = [PSCustomObject]@{
+            samples = $ratios.Count
+            ratios = [double[]]$ratios
+            p95Ratio = [Math]::Round($p95, 6)
+            multiplier = [Math]::Round([Math]::Max(1.0, [Math]::Min(3.0, $p95 * 1.15)), 6)
+            updatedAt = [DateTimeOffset]::UtcNow.ToString('o')
+        }
+        if ($property) { $property.Value = $entry } else { $state.models | Add-Member -NotePropertyName $Model -NotePropertyValue $entry }
+        $state.updatedAt = [DateTimeOffset]::UtcNow.ToString('o')
+        Write-ModelRouterAtomicJson -Path $path -Value $state
     }
     finally {
         $lock.Dispose()

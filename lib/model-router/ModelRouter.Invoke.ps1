@@ -241,10 +241,6 @@ function Invoke-ModelRouterChat {
             $errors.Add([PSCustomObject]@{ model = $candidate; code = 'catalog-missing' })
             continue
         }
-        if (-not (Enter-ModelRouterCircuit -HubRoot $root -Model $candidate -StateRoot $StateRoot)) {
-            $errors.Add([PSCustomObject]@{ model = $candidate; code = 'circuit-open' })
-            continue
-        }
         $itemEffort = Get-ModelRouterPropertyValue $candidateItem 'effortRequested'
         $routeRequestedEffort = Get-ModelRouterPropertyValue $Route 'effortRequested'
         $requestedEffort = if ($itemEffort) {
@@ -258,7 +254,8 @@ function Invoke-ModelRouterChat {
         }
         $effortResult = Resolve-ModelRouterEffort -ModelConfig $config -CatalogRecord $record -Requested $requestedEffort
         $estimate = Get-ModelRouterCostEstimate -Prompt $effectiveInput -CatalogRecord $record `
-            -Effort $effortResult.selected -MaxOutputTokens $MaxOutputTokens
+            -Effort $effortResult.selected -MaxOutputTokens $MaxOutputTokens -Model $candidate `
+            -HubRoot $root -StateRoot $StateRoot
         if (-not $estimate.reliable) {
             $unpriced.Add($candidate)
             if (-not $AllowUnpriced) { continue }
@@ -342,6 +339,12 @@ function Invoke-ModelRouterChat {
                 callId = $candidateCallId
             }
         }
+        if (-not (Enter-ModelRouterCircuit -HubRoot $root -Model $candidate -StateRoot $StateRoot)) {
+            Undo-ModelRouterBudgetReservation -HubRoot $root -SessionId $SessionId `
+                -CallId $candidateCallId -StateRoot $StateRoot | Out-Null
+            $errors.Add([PSCustomObject]@{ model = $candidate; code = 'circuit-open' })
+            continue
+        }
         $body = New-ModelRouterRequestBody -Prompt $Prompt -SystemPrompt $systemPrompt -Model $candidate `
             -Effort $effortResult.selected -ReasoningMetadata $effortResult.metadata -CatalogRecord $record `
             -Estimate $estimate -Sensitive:$Sensitive -StructuredOutput:$StructuredOutput -Creative:$Creative
@@ -371,6 +374,9 @@ function Invoke-ModelRouterChat {
             if ($response.choices -and $response.choices.Count -gt 0) { $text = [string]$response.choices[0].message.content }
             $actual = Get-ModelRouterActualCost -Usage $response.usage -Estimate $estimate
             $usage = Get-ModelRouterUsageDetails -Usage $response.usage
+            Update-ModelRouterCalibration -HubRoot $root -Model $candidate `
+                -EstimatedBaseTokens ([int]$estimate.inputBaseTokens) -ActualPromptTokens $usage.promptTokens `
+                -StateRoot $StateRoot
             $callRecord = [PSCustomObject]@{
                 at = [DateTimeOffset]::UtcNow.ToString('o')
                 callId = $candidateCallId
@@ -438,6 +444,7 @@ function Invoke-ModelRouterChat {
             $statusCode = Get-ModelRouterHttpStatusCode -ErrorRecord $_
             $category = Get-ModelRouterErrorCategory -StatusCode $statusCode -Message $message
             if ($category -eq 'key-auth' -or $category -eq 'key-credit') {
+                Exit-ModelRouterCircuitProbe -HubRoot $root -Model $candidate -StateRoot $StateRoot
                 Write-ModelRouterKeyHealthEvent -HubRoot $root -Status $category -Error $message -StateRoot $StateRoot
                 return [PSCustomObject]@{
                     ok = $false

@@ -17,7 +17,8 @@
     [switch]$Creative,
     [switch]$AllowUnpriced,
     [switch]$PreviewGlobal,
-    [bool]$CursorAvailable = $true,
+    [switch]$CursorUnavailable,
+    [switch]$RequiresCursorTools,
     [switch]$RefreshCatalog,
     [switch]$DryRun,
     [switch]$Json,
@@ -48,7 +49,8 @@ try {
     $catalog = @(Get-OpenRouterCatalog -HubRoot $HubRoot -Refresh:$RefreshCatalog)
     if ($PreviewGlobal) {
         $globalRoute = Resolve-GlobalModelRoute -Prompt $Prompt -Rank $Rank -ProfileId $ProfileId -Stage $Stage `
-            -Effort $Effort -CursorAvailable:$CursorAvailable -HubRoot $HubRoot -Catalog $catalog
+            -Effort $Effort -CursorAvailable:(-not $CursorUnavailable) -RequiresCursorTools:$RequiresCursorTools `
+            -HubRoot $HubRoot -Catalog $catalog
         $result = [PSCustomObject]@{
             ok = [bool]$globalRoute.ok
             preview = $true
@@ -68,7 +70,8 @@ try {
         -ProfileId $ProfileId -HubRoot $HubRoot -Catalog $catalog
     $record = Get-OpenRouterModelRecord -Catalog $catalog -Model $route.model
     $effectiveInput = if ($route.profile.systemPrompt) { [string]$route.profile.systemPrompt + "`n`n" + $Prompt } else { $Prompt }
-    $estimate = Get-ModelRouterCostEstimate -Prompt $effectiveInput -CatalogRecord $record -Effort $route.effort -MaxOutputTokens $MaxOutputTokens
+    $estimate = Get-ModelRouterCostEstimate -Prompt $effectiveInput -CatalogRecord $record -Effort $route.effort `
+        -MaxOutputTokens $MaxOutputTokens -Model $route.model -HubRoot $HubRoot -StateRoot $StateRoot
     if (-not $estimate.reliable -and -not $AllowUnpriced) {
         $result = [PSCustomObject]@{
             ok = $false

@@ -1,0 +1,14 @@
+﻿{
+    "schemaVersion":  1,
+    "mode":  "active",
+    "manualDelegateAllowed":  true,
+    "activatedAt":  "2026-09-09T15:01:55.7372856+00:00",
+    "shadowReport":  "ai-tracking/ecosystem-governance/reports/2026-09-09-model-router-shadow.json",
+    "gate":  {
+                 "minimumCases":  20,
+                 "minimumAccuracy":  0.9,
+                 "maximumPolicyViolations":  0,
+                 "maximumBudgetViolations":  0,
+                 "maximumUnexplainedExpensiveFallbacks":  0
+             }
+}

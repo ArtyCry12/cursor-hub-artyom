@@ -1,4 +1,4 @@
-param([string]$HubRoot = (Split-Path $PSScriptRoot -Parent))
+﻿param([string]$HubRoot = (Split-Path $PSScriptRoot -Parent))
 
 $ErrorActionPreference = "Stop"
 $previousOutputEncoding = $OutputEncoding
@@ -40,6 +40,30 @@ try {
 
     $social = Invoke-TaskRouterHook -HookPath $userHook -Payload @{ prompt = "hi" }
     if ($social) { throw "Social prompt should not inject route context" }
+
+    $ranked = Invoke-TaskRouterHook -HookPath $userHook -Payload @{
+        prompt = "R2, R1.5 make this thing better probe-$nonce"
+    }
+    $rankedContext = [string]$ranked.hookSpecificOutput.additionalContext
+    if ($rankedContext -notmatch '\[MODEL ROUTE\]' -or
+        $rankedContext -notmatch 'AllowedRanks: R2,R1.5' -or
+        $rankedContext -match 'TASK ROUTE - advisor') {
+        throw "Mixed-rank hook binding failed"
+    }
+    $fingerprintMatch = [Regex]::Match($rankedContext, 'fp=([0-9a-f]+)')
+    if (-not $fingerprintMatch.Success) { throw "Mixed-rank context missed fingerprint" }
+    $rankedLog = Get-Content (Join-Path $HubRoot 'ai-tracking/task-router-log.jsonl') -Encoding UTF8 |
+        ForEach-Object { $_ | ConvertFrom-Json } |
+        Where-Object { $_.fp -eq $fingerprintMatch.Groups[1].Value } |
+        Select-Object -Last 1
+    if (-not $rankedLog -or $rankedLog.advisor -or $rankedLog.routeIds -notcontains 'openrouter-free') {
+        throw "Final rank override diverged from Task Router telemetry"
+    }
+    $parsedTimestamp = [DateTimeOffset]::MinValue
+    if (-not [DateTimeOffset]::TryParse([string]$rankedLog.ts, [ref]$parsedTimestamp) -or
+        $parsedTimestamp.Offset -ne [TimeSpan]::Zero) {
+        throw "Task Router telemetry timestamp is not UTC ISO"
+    }
 
     $subagent = Invoke-TaskRouterHook -HookPath $taskHook -Payload @{
         tool_name = "Subagent"

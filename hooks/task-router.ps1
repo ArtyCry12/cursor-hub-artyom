@@ -56,10 +56,22 @@ try {
     $modelBlock = ''
     if ($rankRequests.Count -gt 0) {
         $rankLabel = ($rankRequests -replace '^rank1_5$', 'R1.5' -replace '^rank2$', 'R2' -replace '^rank3$', 'R3') -join ','
+        $rolloutPath = Join-Path $hubRoot 'lib/model-router/rollout.json'
+        $rolloutMode = 'shadow'
+        if (Test-Path -LiteralPath $rolloutPath) {
+            $rolloutMode = [string](Get-Content -LiteralPath $rolloutPath -Raw -Encoding UTF8 | ConvertFrom-Json).mode
+        }
+        $modelAction = if ($rolloutMode -eq 'active') {
+            'keep Cursor as the tool parent; use model-worker MCP route_preview/delegate for intellectual stages.'
+        }
+        else {
+            'shadow only: call model-worker route_preview and log the recommendation; do not auto-delegate.'
+        }
         $modelBlock = @"
 [MODEL ROUTE]
 AllowedRanks: $rankLabel
-Action: keep Cursor as the tool parent; use model-worker MCP route_preview/delegate for intellectual stages.
+Rollout: $rolloutMode
+Action: $modelAction
 Selection: quality floor, role, runtime health, live price, and latency; the listed ranks are a pool, not a first-match choice.
 Budget: reserve atomically, check the shared-key remainder, and ask for a separate yes before an unpriced model.
 Fallback: use the scored provider/model circuit-breaker chain. Terminal model-route.ps1 remains the post-limit text fallback.

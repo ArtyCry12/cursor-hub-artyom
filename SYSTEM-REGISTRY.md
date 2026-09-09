@@ -39,7 +39,7 @@ Canonical map of `C:\Users\artyo\.cursor`. Update when adding rules, skills, or 
 | `rules/markitdown.mdc` | Document intake always-on |
 | `rules/rtk-token-economy.mdc` | RTK, compress Shell output |
 | `rules/ponytail.mdc` | YAGNI / minimal code |
-| `rules/openrouter-free-routing.mdc` | Draft text → OR Rank3 wrapper; volume Task → Composer; never inherit; Rank2 ask Boss |
+| `rules/openrouter-free-routing.mdc` | OpenRouter R1.5/R2/R3 text router; live price, effort, auto cap, health fallback |
 
 ## Task Router (DEC-057)
 
@@ -174,14 +174,17 @@ Default profile: MD + EU. Universal via `--profile eu|us|generic`. Not legal adv
 | Canon (search here) | `ai-tracking/openrouter-free.md` |
 | Skill | `skills/openrouter-free/SKILL.md` |
 | Wrapper | `skills/openrouter-free/scripts/openrouter.ps1` |
+| Router engine | `lib/model-router/ModelRouter.psm1` |
+| Ranked command | `commands/model-route.ps1` |
+| Ranked health | `commands/model-router-health.ps1` |
 | Rule (always-on) | `rules/openrouter-free-routing.mdc` |
 | Squad override (archived) | `skills/_archive/squad/project-squad/reference/model-map.md` |
 | Test | `commands/openrouter-free-test.ps1` |
-| Health | `ai-tracking/openrouter-free-health.json` |
-| Route | `openrouter-free` in `lib/task-router/routes.json` (aligned 2026-09-06: Composer volume, `-BossYes`) |
+| Health | `ai-tracking/model-router-health.json` + legacy `ai-tracking/openrouter-free-health.json` |
+| Route | `openrouter-free` in `lib/task-router/routes.json` (R1.5/R2/R3 trigger) |
 | AGENTS.md | `<!-- openrouter-free:start -->` |
 
-Draft text → wrapper Rank 3. Volume Task → `composer-2.5-fast`. Never `inherit`. Never Task `glm-5.2-high` as free. Rank 2 only after Boss yes + wrapper `-BossYes`. Do not Override OpenAI Base URL. Key: `OPENROUTER_API_KEY` user env. Map: `ai-tracking/KEYS-MAP.md`.
+Explicit R1.5/R2/R3 → `commands/model-route.ps1` for text/planning. Paid calls use live prices, personalized effort, auto budget cap and local fallback. Legacy STT/`-Tier mid` keep `-BossYes`. The terminal route works after Cursor usage is exhausted but has no file tools. Do not Override OpenAI Base URL. Key: `OPENROUTER_API_KEY` user env.
 
 ## Skills / MCP Session 2 artifacts
 

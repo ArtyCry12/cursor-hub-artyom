@@ -1,7 +1,7 @@
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **cursor-hub-artyom** (3642 symbols, 4203 relationships, 28 execution flows after 2026-08-25 reindex). Local folder stays `.cursor`. Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **cursor-hub-artyom** (6263 symbols, 7278 relationships, 70 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > Index stale? Run `node .gitnexus/run.cjs analyze` from the project root — it auto-selects an available runner. No `.gitnexus/run.cjs` yet? `npx gitnexus analyze` (npm 11 crash → `npm i -g gitnexus`; #1939).
 
@@ -78,11 +78,11 @@ Primary: **`user-memory` MCP** → **`AGENTS.md`** → **`ai-tracking/`** (Dev O
 <!-- openrouter-free:start -->
 ## OpenRouter models (cost routing)
 
-Canon: [`ai-tracking/openrouter-free.md`](ai-tracking/openrouter-free.md) · ladder [`ai-tracking/model-ladder.json`](ai-tracking/model-ladder.json) · keys [`ai-tracking/KEYS-MAP.md`](ai-tracking/KEYS-MAP.md) · skill `skills/openrouter-free/SKILL.md` · rule `rules/openrouter-free-routing.mdc` · test `commands/openrouter-free-test.ps1`.
+Canon: [`ai-tracking/openrouter-free.md`](ai-tracking/openrouter-free.md) · ladder [`ai-tracking/model-ladder.json`](ai-tracking/model-ladder.json) · engine `lib/model-router/ModelRouter.psm1` · command `commands/model-route.ps1` · health `commands/model-router-health.ps1`.
 
 Key: Windows user env `OPENROUTER_API_KEY`. Do **not** Override OpenAI Base URL.
 
-**Subagent:** never `inherit` the chat model. Text draft → OpenRouter wrapper (Rank 3). Volume tools → Task `composer-2.5-fast`. Review → `cursor-grok-4.6-high`. **Do not** use Task `glm-5.2-high` as a free/volume worker. Rank 2 mid/STT → parent asks Boss first; wrapper needs `-BossYes` (no answer = no HTTP).
+Explicit `R1.5/R2/R3` → OpenRouter text/planning router with live prices, model-specific effort, auto budget cap and health-aware fallback. This is not a Cursor Task and has no file tools. Terminal routing remains usable after Cursor usage is exhausted. Legacy STT/`-Tier mid` retain `-BossYes`. OpenCode is a future option only; do not install now.
 <!-- openrouter-free:end -->
 
 <!-- seo-geo-aio:start -->

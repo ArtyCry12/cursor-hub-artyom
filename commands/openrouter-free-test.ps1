@@ -99,7 +99,7 @@ if ($keyOk) {
         $failSlug = 'z-ai/glm-5.2:free'
         if ($err -match '^([^:\s]+/[^:\s]+(?::free)?)\s*:') { $failSlug = $Matches[1] }
         # 429 = rate; 403 = provider forbid on fallback — not model delist / not dead key
-        $st = if ($err -match '429|403') { 'degraded' } else { 'dead' }
+        $st = if ($err -match '404|delist|not.?found') { 'unavailable' } else { 'degraded' }
         Set-ModelStatus $models $failSlug $st $err
       }
     }
@@ -129,7 +129,7 @@ if ($keyOk) {
         $errors.Add("tts: $terr")
       }
       else {
-        Set-ModelStatus $models 'fish-audio/s2.1-pro-free:free' $(if ($terr -match '429|403') { 'degraded' } else { 'dead' }) $terr
+        Set-ModelStatus $models 'fish-audio/s2.1-pro-free:free' $(if ($terr -match '404|delist|not.?found') { 'unavailable' } else { 'degraded' }) $terr
         if ($terr -notmatch '429|403') { $errors.Add("tts: $terr") }
       }
     }
@@ -187,8 +187,8 @@ if ($keyOk) {
             $errors.Add("stt: key 401 (not model delist)")
           }
           else {
-            # client/MIME/400 ≠ delist; only hard provider death → dead
-            $st = if ($serr -match '404|delist|not.?found') { 'dead' } else { 'degraded' }
+            # Runtime errors are historical; never permanently ban a model after one probe.
+            $st = if ($serr -match '404|delist|not.?found') { 'unavailable' } else { 'degraded' }
             Set-ModelStatus $models 'microsoft/mai-transcribe-2' $st $serr
             $errors.Add("stt: $serr")
           }
@@ -223,7 +223,7 @@ $health = [ordered]@{
   models      = $models
   errors      = $errList
   repeating   = $is429
-  notes       = 'Key never stored. keyStatus=ok after Boss rotate 2026-09-05. R3 429 = free retry. R3 403 = model/provider forbid. R2 429 = stop-ask Boss. ProbeMid/STT need -BossYes. -NoPlay on TTS test.'
+  notes       = 'Legacy free/TTS/STT health. Key never stored. Runtime failures degrade/unavailable; they never permanently ban a model. Ranked R1.5/R2 health lives in model-router-health.json. ProbeMid/STT retain -BossYes.'
 }
 
 Write-Health $health

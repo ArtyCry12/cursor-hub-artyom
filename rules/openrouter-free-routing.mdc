@@ -1,46 +1,46 @@
 ---
 description: >-
-  Черновик без тулов — OpenRouter Rank 3. Volume-Task — Composer.
-  Never inherit. Rank 2 только после да Boss. Не Override OpenAI Base URL.
+  OpenRouter R1.5/R2/R3 для текста и планирования: live prices,
+  personalized effort, auto budget cap, health-aware fallback.
+  Не Override OpenAI Base URL и не подмена Cursor tools.
 alwaysApply: true
 ---
 
-# OpenRouter / иерархия моделей (расход)
+# OpenRouter R1.5 / R2 / R3
 
 Канон: `ai-tracking/openrouter-free.md` · лестница `ai-tracking/model-ladder.json` · карта ключей `ai-tracking/KEYS-MAP.md` · скилл `skills/openrouter-free/SKILL.md`.
 
-## Субагент — never inherit
+## Явный rank trigger
 
-Даже если в model-map / роли стоит GPT/Claude/Grok — **не** `inherit` модель чата на субагента.
+Если промпт содержит `R1.5`, `R2` или `R3`, для text/planning используй `commands/model-route.ps1` с исходным промптом.
 
-1. Текст без инструментов Cursor → `openrouter.ps1 -Action chat` (live slug из ladder, текст: `z-ai/glm-5.2:free` → MiniMax → Inkling). Нет ключа / 401 → стоп, сказать Boss.
-2. Нужны инструменты Cursor (объём) → Task `model: "composer-2.5-fast"`. **Не** `glm-5.2-high` (запрещён как worker, это не free API).
-3. Review / adversarial → Task `model: "cursor-grok-4.6-high"`.
-4. Юртексты, пиксель 1:1, финальный QA, always-on канон → модель босса (R1), не дешевить без явного «да».
+1. Обнови live catalog/prices.
+2. Выбери model-specific effort.
+3. Рассчитай expected/worst cost и auto cap.
+4. Если цену рассчитать нельзя — спроси бюджет и не вызывай API.
+5. Верни receipt с фактической моделью, effort, fallback и `usage.cost`.
 
-## Полуавто (только parent)
+R1.5: планирование вместо R1 в подходящих задачах. R2/R3: text workers. Они не являются Cursor Task subagents и не получают file/shell/browser/MCP tools.
 
-Спрашивает **этот** чат, не Task-субагент:
+## Effort и fallback
 
-```text
-Задача похожа на Rank N.
-Предлагаю: <slug> — <одна строка>.
-Берём / другой slug / этот ранг не используем?
-```
+- Шкала: `none/minimal/low/medium/high/xhigh/max`.
+- Luna Pro всегда `max`.
+- Неподдерживаемый effort → ближайший допустимый, с отметкой в receipt.
+- Provider failover OpenRouter + локальный model fallback.
+- 429/403/5xx/404 пишутся в history; единичная ошибка не банит модель.
+- Data training deny по умолчанию; ZDR только для sensitive.
 
-- Rank 2 (DeepSeek/GLM5.3/Gemini-OR/STT): нет ответа = нет HTTP.
-- Task не вызывает mid/STT. Нужен mid — стоп, вернуть parent.
-- Standing без вопроса: Composer volume; Grok review.
-- После «да» в этом чате parent может вызвать wrapper с **`-BossYes`**. Без `-BossYes` mid/STT/Rank2-`-Model` → отказ скрипта.
+## После Cursor usage
+
+Терминальная `commands/model-route.ps1` работает за OpenRouter credits независимо от Cursor billing. Без отдельного coding-agent она даёт только текст/планы/патчи, но не применяет файлы. OpenCode сейчас не устанавливать; напомнить о нём при будущем обсуждении полноценного post-limit coding.
 
 ## Запреты
 
 - Override OpenAI Base URL — нет.
 - Печатать `OPENROUTER_API_KEY` — нет.
-- Маскировать Cursor GLM под «бесплатный OpenRouter» — нет.
-- Эскалировать R2 429 на Opus самим — нет (стоп и спросить).
-- Mid/STT без `-BossYes` — нет.
-
-Перед пачкой вызовов: `openrouter.ps1 -Action ping`. Нет ключа / 401 — не жечь Cursor на черновик.
+- Маскировать OpenRouter model под Cursor subagent — нет.
+- Выходить за local budget cap — нет.
+- Legacy STT/`-Tier mid` без `-BossYes` — нет.
 
 Ключи (имена, не значения): `ai-tracking/KEYS-MAP.md`.

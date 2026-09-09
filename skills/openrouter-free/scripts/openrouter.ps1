@@ -89,8 +89,9 @@ function Get-MidChatModels {
     if ($list.Count -gt 0) { return $list }
   }
   return @(
+    'openai/gpt-5.6-luna-pro',
+    'z-ai/glm-5.2',
     'deepseek/deepseek-v4-pro-0813',
-    'z-ai/glm-5.3',
     'deepseek/deepseek-v4-flash-0731',
     'z-ai/glm-5.3-flash',
     'google/gemini-3.8-flash'

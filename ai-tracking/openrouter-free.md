@@ -1,18 +1,35 @@
 # OpenRouter models (hub) — канон
 
-Искать в hub: этот файл · лестница [`ai-tracking/model-ladder.json`](model-ladder.json) (**SoT каталог**) · карта ключей [`ai-tracking/KEYS-MAP.md`](KEYS-MAP.md) · скилл `skills/openrouter-free/SKILL.md` · правило `rules/openrouter-free-routing.mdc` · тест `commands/openrouter-free-test.ps1` · здоровье `ai-tracking/openrouter-free-health.json` · блок в `AGENTS.md`.
+Искать в hub: этот файл · ladder [`ai-tracking/model-ladder.json`](model-ladder.json) · движок `lib/model-router/ModelRouter.psm1` · команда `commands/model-route.ps1` · health `ai-tracking/model-router-health.json` · ключи [`ai-tracking/KEYS-MAP.md`](KEYS-MAP.md).
 
 Ключ: Windows user env `OPENROUTER_API_KEY`. Не в git. Не печатать. Не Override OpenAI Base URL.
 
 ## Источник правды
 
-1. **`model-ladder.json`** — ранги, slug, `status` (live/dead/unknown/banned), modality.
-2. **`openrouter-free-health.json`** — runtime (ключ, ping, per-model ok/dead/degraded). Без секрета.
-3. Этот файл + SKILL + always-on + AGENTS — зеркала. При споре побеждает ladder.
+1. **`model-ladder.json`** — ранги, slug, роли и персональные effort-профили.
+2. **OpenRouter `/api/v1/models`** — live цены, параметры, context и pricing overrides.
+3. **`model-router-health.json`** — bounded runtime history без секретов.
+4. Этот файл + SKILL + always-on + AGENTS — зеркала. При споре побеждает ladder + live catalog.
 
 ## Зачем
 
-Черновик (перевод пачками, сводки, глоссарий) — OpenRouter Rank 3 через обёртку, не жечь Opus/Grok/Sol. Volume-Task с тулами Cursor = `composer-2.5-fast`. Review = `cursor-grok-4.6-high`. **`glm-5.2-high` как worker запрещён** (это счётчик Cursor, не `:free`).
+Явный `R1.5/R2/R3` отправляет text/planning в локальный OpenRouter router. Он рассчитывает effort и стоимость, ставит local cap и ведёт fallback. Это не Cursor Task и не даёт file/shell/browser/MCP tools.
+
+## Rank 1.5 — planning
+
+- `z-ai/glm-5.3` — default planning.
+- `x-ai/grok-4.6` — adversarial/review.
+- `qwen/qwen3.8-max-0902` — long-context/code architecture.
+- `meta/muse-spark-1.2` — balanced synthesis.
+
+## Rank 2 — paid workers
+
+- `openai/gpt-5.6-luna-pro` — critical worker, только `max`.
+- `z-ai/glm-5.2` — general worker.
+- `deepseek/deepseek-v4-pro-0813` — strong worker.
+- `deepseek/deepseek-v4-flash-0731`, `z-ai/glm-5.3-flash` — fast/batch.
+- `google/gemini-3.8-flash` — multimodal fast.
+- `microsoft/mai-transcribe-2` — legacy STT, `-BossYes`.
 
 ## Rank 3 — free (текст / TTS)
 
@@ -23,37 +40,13 @@
 | Текст + image/audio in | `thinkingmachines/inkling:free` |
 | TTS | `fish-audio/s2.1-pro-free:free` |
 
-Порядок текста: GLM → MiniMax → Inkling. Nemotron и Deepgram **удалены** из дефолтов.
+Предпочтительный порядок: GLM → MiniMax → Inkling, но router пропускает отсутствующие в live catalog модели. На 2026-09-09 доступны только Inkling и TTS; GLM/MiniMax остаются кандидатами для будущей перепроверки.
 
-## Rank 2 — mid (платный OpenRouter)
+## Effort и бюджет
 
-Только после **да Boss** (полуавто, спрашивает parent). Без ответа — нет HTTP. Вызов: `openrouter.ps1 … -BossYes` (обязательно). Без флага скрипт отказывает (`boss_yes_required`).
+Нативная шкала: `none/minimal/low/medium/high/xhigh/max`. Router читает supported efforts модели и выбирает ближайший допустимый. Thinking — часть `reasoning`, не второй независимый регулятор.
 
-Порядок chat: `deepseek/deepseek-v4-pro-0813` → `z-ai/glm-5.3` → flash-slug’и → STT `microsoft/mai-transcribe-2` (`POST /api/v1/audio/transcriptions`).
-
-429/5xx на Rank 2 → `degraded` в health → **стоп и спросить**. Не эскалировать самим.
-
-## Субагенты
-
-| Работа | Куда |
-|--------|------|
-| Текст без тулов | `openrouter.ps1 -Action chat` (ladder live) |
-| Volume explore / inventory | Task `composer-2.5-fast` |
-| Review / adversarial | Task `cursor-grok-4.6-high` |
-| Cursor GLM 5.2 | **не звать** |
-| Mid / STT | только parent после ответа Boss |
-
-`inherit` модели чата на субагента **запрещён**.
-
-Полуавто (только parent):
-
-```text
-Задача похожа на Rank N.
-Предлагаю: <slug> — <одна строка>.
-Берём / другой slug / этот ранг не используем?
-```
-
-Task/explore **не** зовут OpenRouter mid. Нужен mid — стоп, вернуть parent.
+Цена обновляется перед paid activation. Receipt содержит expected/worst для этапа, задачи и сессии. Если расчёт возможен — local preflight cap. Если цена неизвестна — запрос бюджета и hard stop до HTTP. Фактическая цена берётся из `usage.cost`. Абсолютный dollar cutoff внутри уже начатого ответа возможен только через spend limit самого OpenRouter API key.
 
 ## Мультимодал
 
@@ -61,15 +54,18 @@ Task/explore **не** зовут OpenRouter mid. Нужен mid — стоп, в
 
 ## Нет ключа / 401
 
-- Текст без тулов: стоп, сказать Boss. Не inherit R1.
-- Файлы/тулы: Composer.
-- 401 = dead key (ротация User env + рестарт Cursor).
+- Стоп, сказать Boss; не печатать ключ.
+- 401 относится к ключу, а не к model health.
+- Ротация Windows User env + restart terminal/Cursor.
 
 ## Команды
 
 ```powershell
 C:\Users\artyo\.cursor\commands\openrouter-free-test.cmd
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File C:\Users\artyo\.cursor\commands\openrouter-free-test.ps1
+powershell -File commands/model-route.ps1 -Prompt "R1.5 plan this" -DryRun
+powershell -File commands/model-route.ps1 -Prompt "R2 classify this" -Json
+powershell -File commands/model-router-health.ps1 -Json -RefreshCatalog
 powershell -File skills/openrouter-free/scripts/openrouter.ps1 -Action ping
 powershell -File skills/openrouter-free/scripts/openrouter.ps1 -Action chat -Prompt "..."
 powershell -File skills/openrouter-free/scripts/openrouter.ps1 -Action tts -Prompt "..." -NoPlay
@@ -78,9 +74,13 @@ powershell -File skills/openrouter-free/scripts/openrouter.ps1 -Action stt -Boss
 
 STT: JSON `input_audio` (base64 + format). Ogg/wav/mp3 ok. Parent may ffmpeg→temp wav if needed; do not mark STT `dead` for MIME/client skip.
 
-## Health 2026-09-06
+## Health 2026-09-09
 
-Ключ User env: `ok`. Ping/chat/TTS/STT green (`z-ai/glm-5.2:free`, Fish, `microsoft/mai-transcribe-2`). Разовый 403 на inkling fallback ≠ мёртвый ключ. Residual: `routes.json` note ещё может упоминать `glm-5.2-high` до волны Task Router.
+Metadata: 10/10 R1.5/R2 slugs present. Smoke: 8 live; Qwen 404 → `unavailable`; Muse 403 → `degraded`. Они остаются в ladder и перепроверяются. Единичная ошибка не создаёт permanent ban.
+
+## После Cursor usage
+
+При полном исчерпании Cursor Agent требует on-demand, upgrade или reset billing cycle; Auto не бесплатный fallback. `commands/model-route.ps1` продолжает text/planning через OpenRouter credits. Полноценные file tools отложены. Если обсуждение вернётся — напомнить про OpenCode; сейчас не устанавливать.
 
 ## Не путать
 

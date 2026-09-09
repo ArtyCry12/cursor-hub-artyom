@@ -58,6 +58,14 @@ assert.equal(social.inject, false);
 assert.equal(resolve("Да, клонируй лендинг конкурента").matches[0]?.Id, "clone-website");
 assert.equal(resolve("Спасибо, всё понятно").social, true);
 assert.equal(resolve("hello please audit the site").advisorRequired, true);
+assert.equal(
+  resolve("Используй R1.5 для планирования").matches[0]?.Id,
+  "openrouter-free",
+);
+assert.equal(
+  resolve("Выполни классификацию через R2").matches[0]?.Id,
+  "openrouter-free",
+);
 const noClone = resolve("Без клонирования собери свой лендинг");
 assert.equal(noClone.matches.some((match) => match.Id === "clone-website"), false);
 const ownLanding = resolve("Сделай лендинг с нуля");

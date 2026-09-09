@@ -575,8 +575,8 @@
         {
           "name": "plugin-exa-exa",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "core",
+          "owner": "Exa Cursor plugin"
         }
       ],
       "subagents": [],
@@ -652,7 +652,7 @@
           "name": "plugin-notion-workspace-notion",
           "descriptorAvailable": true,
           "profile": "ops",
-          "owner": null
+          "owner": "Notion Cursor plugin"
         }
       ],
       "subagents": [],
@@ -819,10 +819,14 @@
       "id": "openrouter-free",
       "kind": "route",
       "owner": "hub",
-      "label": "OpenRouter free / TTS / STT (wrapper)",
+      "label": "OpenRouter R1.5 / R2 / R3 model router",
       "mode": "agent",
       "keywords": [
         "openrouter",
+        "r1.5",
+        "rank1.5",
+        "r2",
+        "r3",
         "glm-5.2:free",
         "fish-audio",
         "mai-transcribe",
@@ -830,6 +834,12 @@
         "бесплатные модели"
       ],
       "phrases": [
+        "используй r1.5",
+        "используй r2",
+        "используй r3",
+        "через r1.5",
+        "через r2",
+        "через r3",
         "бесплатные модели",
         "озвучь",
         "озвучка текста",
@@ -878,7 +888,7 @@
           "path": "skills/openrouter-free/SKILL.md",
           "exists": true,
           "excluded": false,
-          "description": "Calls OpenRouter models from a local wrapper (not the Cursor model picker). Catalog SoT: ai-tracking/model-ladder.json (only status=live). Text free: z-ai/glm-5.2:free → minimax/minimax-m3:free → thinkingmachines/inkling:free. TTS: fish-audio/s2.1-pro-free:free. STT mid: microsoft/mai-transcribe-2 (Boss yes). Mid chat after Boss yes. Never Override OpenAI Base URL."
+          "description": "Routes text and planning through OpenRouter R1.5/R2/R3 with live prices, model-specific reasoning effort, automatic budget caps, health history, and local fallback. Terminal fallback works independently of Cursor usage, but has no file tools. Never Override OpenAI Base URL."
         }
       ],
       "rule": "rules/openrouter-free-routing.mdc",
@@ -886,9 +896,11 @@
       "subagents": [],
       "subagentInfo": [],
       "commands": [
+        "commands/model-route.ps1",
+        "commands/model-router-health.ps1",
         "commands/openrouter-free-test.ps1"
       ],
-      "note": "Wrapper only; do not Override OpenAI Base URL. Subagent volume: Task composer-2.5-fast (never Task glm-5.2-high as free). Mid/STT need Boss yes + -BossYes. Canon: ai-tracking/openrouter-free.md + ai-tracking/KEYS-MAP.md."
+      "note": "Text/planning router only; do not Override OpenAI Base URL. Explicit R1.5/R2/R3 uses live pricing, personalized effort, auto budget cap, and local fallback. After Cursor limits use commands/model-route.ps1; no file tools until a future OpenCode decision."
     },
     {
       "id": "seo-geo",
@@ -996,8 +1008,8 @@
         {
           "name": "plugin-exa-exa",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "core",
+          "owner": "Exa Cursor plugin"
         }
       ],
       "subagents": [],
@@ -1762,8 +1774,8 @@
         {
           "name": "plugin-exa-exa",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "core",
+          "owner": "Exa Cursor plugin"
         }
       ],
       "subagents": [],
@@ -3701,8 +3713,8 @@
         {
           "name": "plugin-exa-exa",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "core",
+          "owner": "Exa Cursor plugin"
         }
       ],
       "subagents": [],
@@ -4019,7 +4031,7 @@
           "name": "plugin-notion-workspace-notion",
           "descriptorAvailable": true,
           "profile": "ops",
-          "owner": null
+          "owner": "Notion Cursor plugin"
         }
       ],
       "subagents": [],
@@ -4083,19 +4095,19 @@
           "name": "plugin-gmail-gmail",
           "descriptorAvailable": true,
           "profile": "ops",
-          "owner": null
+          "owner": "Google Workspace Cursor plugin"
         },
         {
           "name": "plugin-google-calendar-google-calendar",
           "descriptorAvailable": true,
           "profile": "ops",
-          "owner": null
+          "owner": "Google Workspace Cursor plugin"
         },
         {
           "name": "plugin-google-drive-google-drive",
           "descriptorAvailable": true,
           "profile": "ops",
-          "owner": null
+          "owner": "Google Workspace Cursor plugin"
         }
       ],
       "subagents": [],
@@ -5533,8 +5545,8 @@
         {
           "name": "plugin-vercel-vercel",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "ops",
+          "owner": "Vercel Cursor plugin"
         }
       ],
       "subagents": [
@@ -5601,8 +5613,8 @@
         {
           "name": "plugin-supabase-supabase",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "ops",
+          "owner": "Supabase Cursor plugin"
         }
       ],
       "subagents": [],
@@ -5978,8 +5990,8 @@
         {
           "name": "plugin-exa-exa",
           "descriptorAvailable": true,
-          "profile": null,
-          "owner": null
+          "profile": "core",
+          "owner": "Exa Cursor plugin"
         }
       ],
       "subagents": [],

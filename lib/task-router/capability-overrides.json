@@ -492,6 +492,13 @@
   ],
   "mcpProfiles": [
     {"name":"plugin-figma-figma","profile":"design","owner":"Figma Cursor plugin"},
+    {"name":"plugin-exa-exa","profile":"core","owner":"Exa Cursor plugin"},
+    {"name":"plugin-vercel-vercel","profile":"ops","owner":"Vercel Cursor plugin"},
+    {"name":"plugin-gmail-gmail","profile":"ops","owner":"Google Workspace Cursor plugin"},
+    {"name":"plugin-google-calendar-google-calendar","profile":"ops","owner":"Google Workspace Cursor plugin"},
+    {"name":"plugin-google-drive-google-drive","profile":"ops","owner":"Google Workspace Cursor plugin"},
+    {"name":"plugin-notion-workspace-notion","profile":"ops","owner":"Notion Cursor plugin"},
+    {"name":"plugin-supabase-supabase","profile":"ops","owner":"Supabase Cursor plugin"},
     {"name":"user-21st","profile":"design","owner":"21st.dev Magic"},
     {"name":"user-n8n-mcp","profile":"ops","owner":"n8n MCP"},
     {"name":"user-stitch","profile":"design","owner":"Google Stitch"}

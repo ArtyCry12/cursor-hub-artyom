@@ -1,72 +1,65 @@
 ---
 name: openrouter-free
 description: >-
-  Calls OpenRouter models from a local wrapper (not the Cursor model picker).
-  Catalog SoT: ai-tracking/model-ladder.json (only status=live).
-  Text free: z-ai/glm-5.2:free → minimax/minimax-m3:free → thinkingmachines/inkling:free.
-  TTS: fish-audio/s2.1-pro-free:free. STT mid: microsoft/mai-transcribe-2 (Boss yes).
-  Mid chat after Boss yes. Never Override OpenAI Base URL.
+  Routes text and planning through OpenRouter R1.5/R2/R3 with live prices,
+  model-specific reasoning effort, automatic budget caps, health history,
+  and local fallback. Terminal fallback works independently of Cursor usage,
+  but has no file tools. Never Override OpenAI Base URL.
 ---
 
-# OpenRouter models (wrapper)
+# OpenRouter ranked model router
 
-Do **not** enable Cursor Override OpenAI Base URL. This skill is a script, not a picker model.
+This is a local router, not a Cursor picker model. Do **not** enable Cursor Override OpenAI Base URL.
 
 Key: Windows user env `OPENROUTER_API_KEY`. Never print it. Never write it into the repo.
 
-**Whitelist:** call only slugs listed in `ai-tracking/model-ladder.json` that are not `status: banned` or `status: dead` (model delist/404). `unknown` and `live` are callable. Key auth 401 lives in health JSON — do **not** mark free text models `dead` for a bad key.
+SoT: `ai-tracking/model-ladder.json`. Runtime history: `ai-tracking/model-router-health.json`. Live prices and supported parameters must be refreshed from `GET /api/v1/models` before paid activation.
 
 ## When to run
 
-Draft/routine text without Cursor tools → this wrapper (`-Action chat`). Voiceover ("озвучь", TTS) → `-Action tts`. STT → `-Action stt` only after Boss yes (Rank 2).
+An explicit `R1.5`, `R2`, or `R3` in the prompt selects this router for text/planning:
 
-## Subagent override (boss rule)
+- R1.5: planning replacement — GLM 5.3, Grok 4.6, Qwen3.8 Max, Muse Spark.
+- R2: paid workers — Luna Pro (`max` only), GLM 5.2, DeepSeek Pro/Flash, GLM Flash, Gemini Flash.
+- R3: free text/TTS fallbacks that are currently present in the live catalog.
 
-Never `inherit` the chat model onto a Task subagent.
+The rank does not turn an OpenRouter model into a Cursor Task subagent. It has no Cursor file, shell, browser, or MCP tools.
 
-1. Text-only draft → this wrapper (`-Action chat`).
-2. Subagent needs Cursor tools (volume) → Task `model: "composer-2.5-fast"`. **Not** `glm-5.2-high`.
-3. Review / adversarial → Task `model: "cursor-grok-4.6-high"`.
-4. Legal / pixel 1:1 / final QA → boss model unless Boss cheapens it.
-5. Rank 2 mid/STT → **parent asks Boss**. After «да» in this chat, call wrapper with **`-BossYes`**. Task must not call mid. No answer = no HTTP. Without `-BossYes`, script exits `boss_yes_required`.
+## Budget and effort
 
-Полуавто (parent only):
+- Native effort scale: `none/minimal/low/medium/high/xhigh/max`.
+- Use the nearest supported effort and report any adjustment.
+- Luna Pro always uses `max`.
+- Before a paid call, calculate expected/worst stage, task, and session cost from live pricing.
+- If pricing is calculable, apply an automatic local cap. If it is not, ask Boss and make no HTTP request.
+- After each response, record `usage.cost`, reasoning/cache usage, and remaining session budget.
+- `provider.max_price` limits the accepted token rate; it is not a session budget.
+- The local cap is a conservative preflight stop. An absolute mid-response dollar cutoff requires an OpenRouter API-key spend limit.
 
-```text
-Задача похожа на Rank N.
-Предлагаю: <slug> — <одна строка>.
-Берём / другой slug / этот ранг не используем?
-```
+Default provider policy: `require_parameters=true`, price sort, `data_collection=deny`; add ZDR only for sensitive tasks.
 
 ## Commands
 
-Hub root: `C:/Users/artyo/.cursor`
-
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File "skills/openrouter-free/scripts/openrouter.ps1" -Action chat -Prompt "..."
-powershell -NoProfile -ExecutionPolicy Bypass -File "skills/openrouter-free/scripts/openrouter.ps1" -Action tts -Prompt "..." -NoPlay
-powershell -NoProfile -ExecutionPolicy Bypass -File "skills/openrouter-free/scripts/openrouter.ps1" -Action stt -BossYes -AudioPath "path.ogg"
-powershell -NoProfile -ExecutionPolicy Bypass -File "skills/openrouter-free/scripts/openrouter.ps1" -Action chat -Tier mid -BossYes -Prompt "..."
-powershell -NoProfile -ExecutionPolicy Bypass -File "skills/openrouter-free/scripts/openrouter.ps1" -Action ping
+powershell -File commands/model-route.ps1 -Prompt "R1.5 plan this system" -DryRun
+powershell -File commands/model-route.ps1 -Prompt "R2 classify these items" -Json
+powershell -File commands/model-route.ps1 -PromptFile task.md -ExpectedStages 3 -ExpectedTasks 2
+powershell -File commands/model-route.ps1 -Prompt "R1.5 audit" -Sensitive
+powershell -File commands/model-router-health.ps1 -Json -RefreshCatalog
 ```
 
-Long text: `-PromptFile path`. Mid: `-Tier mid -BossYes` and/or Rank2 `-Model <slug> -BossYes`.
+Legacy chat/TTS/STT contracts remain in `skills/openrouter-free/scripts/openrouter.ps1`. STT and legacy `-Tier mid` still require `-BossYes`.
 
-Chat/STT stdout is JSON. STT uses JSON `input_audio` (base64 + format: wav/mp3/ogg/…). Parent may `ffmpeg` → temp wav if API rejects a container; do not mark STT `dead` for MIME/client skip. TTS with `-NoPlay` does not open the player (tests).
+## Health and fallback
 
-## Models (mirror of ladder)
+- OpenRouter provider failover remains enabled.
+- Cross-model fallback is local because each model needs its own effort profile.
+- States: `unknown/live/degraded/unavailable/catalog-missing`.
+- 429/403/5xx/protocol failures are historical evidence, not a permanent ban.
+- A catalog-present model that returns 404 is `unavailable`, not deleted.
 
-| Role | Model |
-|------|--------|
-| Text primary | `z-ai/glm-5.2:free` |
-| Text multimodal | `minimax/minimax-m3:free`, `thinkingmachines/inkling:free` |
-| Speech TTS | `fish-audio/s2.1-pro-free:free` |
-| Speech STT (mid) | `microsoft/mai-transcribe-2` → `POST /api/v1/audio/transcriptions` |
+Current 2026-09-09 probe: eight paid models live; Qwen returned 404 (`unavailable`), Muse returned 403 (`degraded`). Keep both and recheck later.
 
-Nemotron and Deepgram are **not** defaults.
+## Cursor usage boundary
 
-## Missing key / 401
-
-Stop text draft. Tell Boss to set/rotate `OPENROUTER_API_KEY` (User env) and restart Cursor. Files/tools → Composer. Do not inherit R1 for draft.
-
-Health: `commands/openrouter-free-test.ps1`. Canon: `ai-tracking/openrouter-free.md`. Ladder: `ai-tracking/model-ladder.json`. Keys map (no secrets): `ai-tracking/KEYS-MAP.md`.
+When Cursor Agent usage is exhausted, run `commands/model-route.ps1` in a terminal. It uses OpenRouter credits independently. It can return text, plans, analysis, or patches, but cannot apply files or run tools. If full post-limit coding is revisited, remind Boss that OpenCode was the first candidate; do not install it now.

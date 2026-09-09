@@ -1,0 +1,148 @@
+{
+  "checkedAt": "2026-09-09T12:17:05.6312628Z",
+  "models": {
+    "z-ai/glm-5.3": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:27",
+      "lastError": ""
+    },
+    "x-ai/grok-4.6": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:30",
+      "lastError": ""
+    },
+    "qwen/qwen3.8-max-0902": {
+      "status": "unavailable",
+      "checkedAt": "2026-09-09T12:17:05.5544899Z",
+      "lastError": "HTTP 404 during 2026-09-09 smoke probe; catalog entry retained"
+    },
+    "meta/muse-spark-1.2": {
+      "status": "degraded",
+      "checkedAt": "09/09/2026 12:16:31",
+      "lastError": "Response status code does not indicate success: 403 (Forbidden)."
+    },
+    "openai/gpt-5.6-luna-pro": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:34",
+      "lastError": ""
+    },
+    "z-ai/glm-5.2": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:35",
+      "lastError": ""
+    },
+    "deepseek/deepseek-v4-pro-0813": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:37",
+      "lastError": ""
+    },
+    "deepseek/deepseek-v4-flash-0731": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:40",
+      "lastError": ""
+    },
+    "z-ai/glm-5.3-flash": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:41",
+      "lastError": ""
+    },
+    "google/gemini-3.8-flash": {
+      "status": "live",
+      "checkedAt": "09/09/2026 12:16:42",
+      "lastError": ""
+    }
+  },
+  "events": [
+    {
+      "at": "2026-09-09T12:14:29.7928701Z",
+      "model": "z-ai/glm-5.3",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:14:32.826384Z",
+      "model": "x-ai/grok-4.6",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:15:14.0533249Z",
+      "model": "z-ai/glm-5.3",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:15:16.8330243Z",
+      "model": "x-ai/grok-4.6",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:27.8076418Z",
+      "model": "z-ai/glm-5.3",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:30.7473989Z",
+      "model": "x-ai/grok-4.6",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:31.1364015Z",
+      "model": "qwen/qwen3.8-max-0902",
+      "status": "catalog-missing",
+      "error": "Response status code does not indicate success: 404 (Not Found)."
+    },
+    {
+      "at": "2026-09-09T12:16:31.3838287Z",
+      "model": "meta/muse-spark-1.2",
+      "status": "degraded",
+      "error": "Response status code does not indicate success: 403 (Forbidden)."
+    },
+    {
+      "at": "2026-09-09T12:16:34.5391921Z",
+      "model": "openai/gpt-5.6-luna-pro",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:35.6575441Z",
+      "model": "z-ai/glm-5.2",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:37.802562Z",
+      "model": "deepseek/deepseek-v4-pro-0813",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:40.3160953Z",
+      "model": "deepseek/deepseek-v4-flash-0731",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:41.7415739Z",
+      "model": "z-ai/glm-5.3-flash",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:16:42.6207514Z",
+      "model": "google/gemini-3.8-flash",
+      "status": "live",
+      "error": ""
+    },
+    {
+      "at": "2026-09-09T12:17:05.5544899Z",
+      "model": "qwen/qwen3.8-max-0902",
+      "status": "unavailable",
+      "error": "HTTP 404 during 2026-09-09 smoke probe; catalog entry retained"
+    }
+  ],
+  "note": "Historical runtime health. Single failures degrade; they never permanently ban a model."
+}

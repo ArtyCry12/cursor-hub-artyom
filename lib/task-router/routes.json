@@ -168,9 +168,13 @@
     },
     {
       "id": "openrouter-free",
-      "label": "OpenRouter free / TTS / STT (wrapper)",
+      "label": "OpenRouter R1.5 / R2 / R3 model router",
       "keywords": [
         "openrouter",
+        "r1.5",
+        "rank1.5",
+        "r2",
+        "r3",
         "glm-5.2:free",
         "fish-audio",
         "mai-transcribe",
@@ -178,6 +182,12 @@
         "бесплатные модели"
       ],
       "phrases": [
+        "используй r1.5",
+        "используй r2",
+        "используй r3",
+        "через r1.5",
+        "через r2",
+        "через r3",
         "бесплатные модели",
         "озвучь",
         "озвучка текста",
@@ -191,10 +201,12 @@
       "skill": "skills/openrouter-free/SKILL.md",
       "rule": "rules/openrouter-free-routing.mdc",
       "commands": [
+        "commands/model-route.ps1",
+        "commands/model-router-health.ps1",
         "commands/openrouter-free-test.ps1"
       ],
       "mode": "agent",
-      "note": "Wrapper only; do not Override OpenAI Base URL. Subagent volume: Task composer-2.5-fast (never Task glm-5.2-high as free). Mid/STT need Boss yes + -BossYes. Canon: ai-tracking/openrouter-free.md + ai-tracking/KEYS-MAP.md."
+      "note": "Text/planning router only; do not Override OpenAI Base URL. Explicit R1.5/R2/R3 uses live pricing, personalized effort, auto budget cap, and local fallback. After Cursor limits use commands/model-route.ps1; no file tools until a future OpenCode decision."
     },
     {
       "id": "seo-geo",

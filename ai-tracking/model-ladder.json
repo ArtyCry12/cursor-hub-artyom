@@ -1,7 +1,7 @@
 {
-  "schemaVersion": 1,
-  "updatedAt": "2026-09-04T16:56:00.000Z",
-  "notes": "Catalog SoT. Health runtime lives in openrouter-free-health.json. Mirrors copy this file. Never inherit parent Task model. Rank2/STT need Boss yes (semi-auto).",
+  "schemaVersion": 2,
+  "updatedAt": "2026-09-09T12:05:00.000Z",
+  "notes": "Catalog SoT. Live prices and supported parameters are refreshed from OpenRouter before paid activation. Runtime health is historical: one failure never permanently bans a model.",
   "aliases": {
     "boss.top": "rank1.top",
     "boss.default": "rank1.daily",
@@ -51,21 +51,142 @@
       "status": "live"
     }
   },
-  "rank2": {
-    "policy": "semi-auto-ask-parent-only",
+  "rank1_5": {
+    "policy": "planning-replacement-with-auto-budget-cap",
     "chatOrder": [
-      "deepseek/deepseek-v4-pro-0813",
       "z-ai/glm-5.3",
+      "meta/muse-spark-1.2",
+      "qwen/qwen3.8-max-0902",
+      "x-ai/grok-4.6"
+    ],
+    "models": {
+      "z-ai/glm-5.3": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "planning-default",
+        "reasoningMandatory": true,
+        "supportedEfforts": ["low", "high", "max"],
+        "defaultEffort": "max"
+      },
+      "x-ai/grok-4.6": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "adversarial-review",
+        "reasoningMandatory": true,
+        "supportedEfforts": ["low", "medium", "high", "xhigh"],
+        "defaultEffort": "high"
+      },
+      "qwen/qwen3.8-max-0902": {
+        "status": "unavailable",
+        "probedAt": "2026-09-09",
+        "lastProbeNote": "HTTP 404 while catalog entry remained present; keep and recheck",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "long-context-planning",
+        "reasoningMandatory": true,
+        "supportedEfforts": ["minimal", "low", "medium", "high", "xhigh"],
+        "defaultEffort": "xhigh"
+      },
+      "meta/muse-spark-1.2": {
+        "status": "degraded",
+        "probedAt": "2026-09-09",
+        "lastProbeNote": "HTTP 403; keep and recheck",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "balanced-synthesis",
+        "reasoningMandatory": true,
+        "supportedEfforts": ["minimal", "low", "medium", "high", "xhigh"],
+        "defaultEffort": "medium"
+      }
+    }
+  },
+  "rank2": {
+    "policy": "auto-budget-cap-or-ask-when-unpriced",
+    "chatOrder": [
+      "openai/gpt-5.6-luna-pro",
+      "z-ai/glm-5.2",
+      "deepseek/deepseek-v4-pro-0813",
       "deepseek/deepseek-v4-flash-0731",
       "z-ai/glm-5.3-flash",
       "google/gemini-3.8-flash"
     ],
     "models": {
-      "deepseek/deepseek-v4-pro-0813": { "status": "live", "modality": ["text"], "role": "mid-strong", "probedAt": "2026-09-05" },
-      "z-ai/glm-5.3": { "status": "unknown", "modality": ["text"], "role": "mid" },
-      "deepseek/deepseek-v4-flash-0731": { "status": "unknown", "modality": ["text"], "role": "mid-fast" },
-      "z-ai/glm-5.3-flash": { "status": "unknown", "modality": ["text"], "role": "mid-fast" },
-      "google/gemini-3.8-flash": { "status": "unknown", "modality": ["text"], "role": "mid-fast", "note": "OpenRouter slug, not Google Studio" },
+      "openai/gpt-5.6-luna-pro": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "critical-worker",
+        "reasoningMandatory": false,
+        "supportedEfforts": ["none", "low", "medium", "high", "xhigh", "max"],
+        "defaultEffort": "max",
+        "fixedEffort": "max"
+      },
+      "z-ai/glm-5.2": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "general-worker",
+        "reasoningMandatory": false,
+        "supportedEfforts": ["high", "xhigh"],
+        "defaultEffort": "high"
+      },
+      "deepseek/deepseek-v4-pro-0813": {
+        "status": "live",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "mid-strong",
+        "probedAt": "2026-09-09",
+        "reasoningMandatory": false,
+        "supportedEfforts": ["low", "high", "max"],
+        "defaultEffort": "high"
+      },
+      "deepseek/deepseek-v4-flash-0731": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "mid-fast",
+        "reasoningMandatory": false,
+        "supportedEfforts": ["low", "high", "max"],
+        "defaultEffort": "high"
+      },
+      "z-ai/glm-5.3-flash": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "mid-fast",
+        "reasoningMandatory": true,
+        "supportedEfforts": ["low", "high", "max"],
+        "defaultEffort": "max"
+      },
+      "google/gemini-3.8-flash": {
+        "status": "live",
+        "probedAt": "2026-09-09",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-09",
+        "modality": ["text"],
+        "role": "multimodal-fast",
+        "reasoningMandatory": true,
+        "supportedEfforts": ["low", "medium", "high"],
+        "defaultEffort": "medium",
+        "note": "OpenRouter slug, not Google Studio"
+      },
       "microsoft/mai-transcribe-2": { "status": "live", "modality": ["audio-in"], "role": "stt", "endpoint": "audio/transcriptions", "probedAt": "2026-09-06", "note": "JSON base64 input_audio; -BossYes" }
     }
   },
@@ -76,9 +197,9 @@
       "thinkingmachines/inkling:free"
     ],
     "models": {
-      "z-ai/glm-5.2:free": { "status": "live", "modality": ["text"], "role": "text-primary", "probedAt": "2026-09-06", "note": "Earlier 429 is rate-limit, not auth" },
-      "minimax/minimax-m3:free": { "status": "unknown", "modality": ["text", "image-in", "video-in"], "role": "multimodal" },
-      "thinkingmachines/inkling:free": { "status": "unknown", "modality": ["text", "image-in", "audio-in"], "role": "multimodal", "note": "403 on exhausted fallback ≠ dead key; do not mark dead for key auth" },
+      "z-ai/glm-5.2:free": { "status": "catalog-missing", "modality": ["text"], "role": "text-primary", "probedAt": "2026-09-09", "note": "Missing from live catalog; retain for recheck" },
+      "minimax/minimax-m3:free": { "status": "catalog-missing", "modality": ["text", "image-in", "video-in"], "role": "multimodal", "probedAt": "2026-09-09", "note": "Missing from live catalog; retain for recheck" },
+      "thinkingmachines/inkling:free": { "status": "degraded", "modality": ["text", "image-in", "audio-in"], "role": "multimodal", "probedAt": "2026-09-09", "note": "HTTP 403; keep and recheck, not a dead key" },
       "fish-audio/s2.1-pro-free:free": { "status": "live", "modality": ["tts"], "role": "tts", "endpoint": "audio/speech", "probedAt": "2026-09-05" }
     },
     "removedDefaults": [
@@ -87,9 +208,11 @@
     ]
   },
   "semiAuto": {
-    "askParentOnly": true,
+    "askParentOnly": false,
+    "askWhenUnpriced": true,
+    "autoBudgetCap": true,
     "taskMustNotCallMid": true,
-    "template": "Задача похожа на Rank N. Предлагаю: <slug> — <одна строка>. Берём / другой slug / этот ранг не используем?",
+    "template": "Маршрут <rank>: <model>, effort=<effort>, auto-cap=<usd>. Если цену нельзя вычислить — спросить бюджет и остановиться.",
     "standingNoAsk": ["composer-2.5-fast", "cursor-grok-4.6-high"],
     "neverInherit": true
   }

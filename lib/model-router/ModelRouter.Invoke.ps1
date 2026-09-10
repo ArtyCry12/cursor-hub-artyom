@@ -134,11 +134,11 @@ function New-ModelRouterRequestBody {
     }
     $supported = @((Get-ModelRouterPropertyValue $CatalogRecord 'supported_parameters'))
     if ($supported -contains 'reasoning' -or $supported -contains 'reasoning_effort') {
-        $reasoning = [ordered]@{ effort = $Effort; exclude = $true }
+        $reasoning = [ordered]@{ effort = $Effort }
         if ([bool]$ReasoningMetadata.supportsMaxTokens -and $Effort -ne 'none' -and $Estimate.maxOutputTokens -gt 1) {
-            $budget = [Math]::Floor($Estimate.maxOutputTokens * (Get-ModelRouterReasoningRatio -Effort $Effort))
-            $budget = [Math]::Max(1, [Math]::Min($Estimate.maxOutputTokens - 1, $budget))
-            $reasoning = [ordered]@{ max_tokens = [int]$budget; exclude = $true }
+            $budget = [Math]::Floor($Estimate.maxOutputTokens * (Get-ModelRouterReasoningRatio -Effort $Effort) * 0.7)
+            $budget = [Math]::Max(1, [Math]::Min([Math]::Floor($Estimate.maxOutputTokens * 0.7), $budget))
+            $reasoning = [ordered]@{ max_tokens = [int]$budget }
         }
         $body.reasoning = $reasoning
     }
@@ -397,23 +397,59 @@ function Invoke-ModelRouterChat {
             }
             $settlement = Complete-ModelRouterBudgetReservation -HubRoot $root -SessionId $SessionId `
                 -CallId $candidateCallId -ActualUsd $actual -Call $callRecord -BudgetUsd $effectiveBudget -StateRoot $StateRoot
+            $textEmpty = [string]::IsNullOrWhiteSpace($text)
+            if ($textEmpty) {
+                $errors.Add([PSCustomObject]@{
+                    model = $candidate
+                    code = 'empty_completion'
+                    error = 'model returned empty message content'
+                    actualUsd = $actual
+                    reasoningTokens = $usage.reasoningTokens
+                })
+                Write-ModelRouterHealthEvent -HubRoot $root -Model $candidate -Status 'degraded' -Category 'empty-completion' `
+                    -Error 'empty message content' -LatencyMs $started.Elapsed.TotalMilliseconds -StateRoot $StateRoot
+                continue
+            }
             Write-ModelRouterHealthEvent -HubRoot $root -Model $candidate -Status 'live' -Category 'success' `
                 -LatencyMs $started.Elapsed.TotalMilliseconds -StateRoot $StateRoot
             if (-not $settlement.ok) {
+                $sessionBudgetExceeded = ($effectiveBudget -ge 0 -and [double]$settlement.session.spentUsd -gt ($effectiveBudget + 0.00000001))
+                if ($sessionBudgetExceeded) {
+                    return [PSCustomObject]@{
+                        ok = $false
+                        code = 'budget_overrun'
+                        rank = $candidateRank
+                        requestedModel = [string]$Route.model
+                        model = [string]$response.model
+                        effort = $effortResult.selected
+                        estimate = $estimate
+                        actualUsd = $actual
+                        reservedUsd = $reserveAmount
+                        sessionSpentUsd = $settlement.session.spentUsd
+                        text = $text
+                        usage = $response.usage
+                        fallbackUsed = ($candidate -ne [string]$Route.model)
+                    }
+                }
                 return [PSCustomObject]@{
-                    ok = $false
-                    code = 'budget_overrun'
+                    ok = $true
+                    code = 'completed_with_budget_overrun'
                     rank = $candidateRank
                     requestedModel = [string]$Route.model
                     model = [string]$response.model
                     effort = $effortResult.selected
+                    effortAdjusted = $effortResult.adjusted
                     estimate = $estimate
-                    actualUsd = $actual
-                    reservedUsd = $reserveAmount
+                    budgetUsd = $effectiveBudget
+                    sharedKeyRemainingUsd = if ($KeyInfo) { $KeyInfo.limitRemaining } else { $null }
                     sessionSpentUsd = $settlement.session.spentUsd
+                    sessionReservedUsd = $settlement.session.reservedUsd
+                    budgetExceeded = $true
                     text = $text
                     usage = $response.usage
+                    usageDetails = $usage
                     fallbackUsed = ($candidate -ne [string]$Route.model)
+                    profile = [string]$profile.id
                 }
             }
             return [PSCustomObject]@{

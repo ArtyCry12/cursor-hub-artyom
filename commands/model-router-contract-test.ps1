@@ -89,6 +89,7 @@ try {
     Assert-Equal (Get-ModelRouterIntent -Prompt 'adversarial critic review') 'review' 'Review intent failed'
     Assert-Equal (Get-ModelRouterIntent -Prompt 'спланируй архитектуру репозитория') 'architecture' 'RU architecture intent failed'
     Assert-Equal (Get-ModelRouterIntent -Prompt 'fast batch classification') 'batch' 'Batch intent failed'
+    Assert-Equal (Get-ModelRouterIntent -Prompt "severity: critical`nplan the migration") 'planning' 'severity taxonomy steered critical'
 
     foreach ($record in $catalog | Where-Object { $_.id -notlike 'test/*' }) {
         Write-ModelRouterHealthEvent -HubRoot $HubRoot -Model $record.id -Status 'live' -Category 'success'
@@ -341,11 +342,58 @@ try {
     $overrunResponse = Invoke-ModelRouterChat -Prompt 'test overrun' -Route $keyRoute -Catalog $catalog `
         -BudgetUsd 1.0 -MaxOutputTokens 8 -SessionId 'overrun' -CallId 'overrun' `
         -KeyInfo ([PSCustomObject]@{ limitRemaining = 10.0 }) -Transport $overrunTransport -HubRoot $HubRoot
-    Assert-Equal $overrunResponse.code 'budget_overrun' 'Actual overrun returned ok'
-    Assert-Equal $overrunResponse.ok $false 'Actual overrun must not be ok'
+    Assert-Equal $overrunResponse.code 'completed_with_budget_overrun' 'Soft overrun with text should complete'
+    Assert-Equal $overrunResponse.ok $true 'Soft overrun with text must remain ok'
+    Assert-True $overrunResponse.budgetExceeded 'Soft overrun must flag budgetExceeded'
+
+    $hardOverrunTransport = {
+        param($request)
+        return [PSCustomObject]@{
+            model = $request.model
+            choices = @([PSCustomObject]@{ message = [PSCustomObject]@{ content = 'still expensive' } })
+            usage = [PSCustomObject]@{
+                cost = 0.05
+                prompt_tokens = 10
+                completion_tokens = 1
+                completion_tokens_details = [PSCustomObject]@{ reasoning_tokens = 0 }
+                prompt_tokens_details = [PSCustomObject]@{ cached_tokens = 0; cache_write_tokens = 0 }
+            }
+        }
+    }
+    $hardOverrun = Invoke-ModelRouterChat -Prompt 'test hard overrun' -Route $keyRoute -Catalog $catalog `
+        -BudgetUsd 0.01 -MaxOutputTokens 8 -SessionId 'overrun-hard' -CallId 'overrun-hard' `
+        -KeyInfo ([PSCustomObject]@{ limitRemaining = 10.0 }) -Transport $hardOverrunTransport -HubRoot $HubRoot
+    Assert-Equal $hardOverrun.code 'budget_overrun' 'Session budget overrun returned wrong code'
+    Assert-Equal $hardOverrun.ok $false 'Session budget overrun must not be ok'
+
+    $emptyTransport = {
+        param($request)
+        return [PSCustomObject]@{
+            model = $request.model
+            choices = @([PSCustomObject]@{ message = [PSCustomObject]@{ content = '' } })
+            usage = [PSCustomObject]@{
+                cost = 0.0001
+                prompt_tokens = 10
+                completion_tokens = 20
+                completion_tokens_details = [PSCustomObject]@{ reasoning_tokens = 20 }
+                prompt_tokens_details = [PSCustomObject]@{ cached_tokens = 0; cache_write_tokens = 0 }
+            }
+        }
+    }
+    $emptyResponse = Invoke-ModelRouterChat -Prompt 'test empty' -Route $keyRoute -Catalog $catalog `
+        -BudgetUsd 0.01 -MaxOutputTokens 8 -SessionId 'empty' -CallId 'empty' `
+        -KeyInfo ([PSCustomObject]@{ limitRemaining = 10.0 }) -Transport $emptyTransport -HubRoot $HubRoot
+    Assert-Equal $emptyResponse.ok $false 'Empty completion must fail after fallbacks'
+    Assert-True (@($emptyResponse.errors | Where-Object { $_.code -eq 'empty_completion' }).Count -gt 0) 'Empty completion not recorded'
 
     $r3 = Resolve-GlobalModelRoute -Prompt 'R3 draft text' -OpenRouterOnly -Catalog $catalog -HubRoot $HubRoot
     Assert-Equal $r3.code 'r3_text_unavailable' 'Empty R3 allowlist did not fail honestly'
+
+    $seedCatalog = $catalog + @(New-CatalogRecord 'inclusionai/ling-3.0-flash-sante:free' @('none', 'medium') -PromptPrice 0 -CompletionPrice 0)
+    Ensure-ModelRouterR3Allowlist -HubRoot $HubRoot -Catalog $seedCatalog | Out-Null
+    $r3Seeded = Resolve-GlobalModelRoute -Prompt 'R3 draft text' -OpenRouterOnly -Catalog $seedCatalog -HubRoot $HubRoot
+    Assert-True $r3Seeded.ok 'Seeded R3 allowlist should resolve'
+    Assert-Equal $r3Seeded.model 'inclusionai/ling-3.0-flash-sante:free' 'Seeded R3 model mismatch'
 
     Write-Output 'model-router contracts: ok'
 }

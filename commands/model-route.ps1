@@ -17,8 +17,10 @@
     [switch]$Creative,
     [switch]$AllowUnpriced,
     [switch]$PreviewGlobal,
-    [switch]$CursorUnavailable,
-    [switch]$RequiresCursorTools,
+    [Parameter()]
+    $CursorUnavailable = $false,
+    [Parameter()]
+    $RequiresCursorTools = $false,
     [switch]$RefreshCatalog,
     [switch]$DryRun,
     [switch]$Json,
@@ -45,11 +47,28 @@ if ($ExpectedTasks -lt 1) { $ExpectedTasks = 1 }
 
 Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
 
+function ConvertTo-ModelRouterFlag {
+    param($Value)
+    if ($Value -is [bool]) { return [bool]$Value }
+    if ($Value -is [System.Management.Automation.SwitchParameter]) { return [bool]$Value.IsPresent }
+    if ($null -eq $Value -or $Value -eq '') { return $false }
+    if ($Value -is [byte] -or $Value -is [int] -or $Value -is [long] -or $Value -is [double] -or $Value -is [decimal]) {
+        return [int]$Value -ne 0
+    }
+    $text = ([string]$Value).Trim().ToLowerInvariant()
+    if ($text -in @('1', 'true', 'yes', 'on')) { return $true }
+    if ($text -in @('0', 'false', 'no', 'off')) { return $false }
+    return [System.Convert]::ToBoolean($Value)
+}
+
+$CursorUnavailableFlag = ConvertTo-ModelRouterFlag $CursorUnavailable
+$RequiresCursorToolsFlag = ConvertTo-ModelRouterFlag $RequiresCursorTools
+
 try {
     $catalog = @(Get-OpenRouterCatalog -HubRoot $HubRoot -Refresh:$RefreshCatalog)
     if ($PreviewGlobal) {
         $globalRoute = Resolve-GlobalModelRoute -Prompt $Prompt -Rank $Rank -ProfileId $ProfileId -Stage $Stage `
-            -Effort $Effort -CursorAvailable:(-not $CursorUnavailable) -RequiresCursorTools:$RequiresCursorTools `
+            -Effort $Effort -CursorAvailable:(-not $CursorUnavailableFlag) -RequiresCursorTools:$RequiresCursorToolsFlag `
             -HubRoot $HubRoot -Catalog $catalog
         $result = [PSCustomObject]@{
             ok = [bool]$globalRoute.ok

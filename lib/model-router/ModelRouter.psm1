@@ -48,6 +48,7 @@ Export-ModuleMember -Function @(
     'Get-ModelRouterCalibrationMultiplier',
     'Update-ModelRouterCalibration',
     'Get-ModelRouterVerifiedR3Models',
+    'Ensure-ModelRouterR3Allowlist',
     'Set-ModelRouterR3Verification',
     'Get-OpenRouterKey',
     'Get-OpenRouterKeyInfo',

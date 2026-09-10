@@ -184,12 +184,27 @@ function Get-OpenRouterModelRecord {
     return $null
 }
 
-function Get-ModelRouterIntent {
+function Get-ModelRouterIntentPromptText {
     param(
         [Parameter(Mandatory)][string]$Prompt,
         [string]$Stage = ''
     )
     $normalized = ($Prompt + ' ' + $Stage).ToLowerInvariant()
+    # Strip fenced blocks and severity taxonomy so meta-audits do not steer routing.
+    $normalized = [Regex]::Replace($normalized, '(?s)```.*?```', ' ')
+    $normalized = [Regex]::Replace($normalized, '(?i)severity\s*[:=]\s*(critical|high|medium|low|below-low|info)', ' ')
+    $normalized = [Regex]::Replace($normalized, '(?i)\bsev(?:erity)?[-_:]?(critical|high|medium|low)\b', ' ')
+    $normalized = [Regex]::Replace($normalized, '(?i)"severity"\s*:\s*"(critical|high|medium|low|below-low|info)"', ' ')
+    $normalized = [Regex]::Replace($normalized, '(?i)\bid\s*=\s*[a-z0-9_-]*(critical|high|medium|low)[a-z0-9_-]*', ' ')
+    return $normalized
+}
+
+function Get-ModelRouterIntent {
+    param(
+        [Parameter(Mandatory)][string]$Prompt,
+        [string]$Stage = ''
+    )
+    $normalized = Get-ModelRouterIntentPromptText -Prompt $Prompt -Stage $Stage
     if ($normalized -match '(?<![\p{L}\p{N}_])(critical|maximum|критич[\p{L}]*|максимальн[\p{L}]*)(?![\p{L}\p{N}_])') {
         return 'critical'
     }
@@ -531,7 +546,14 @@ function Get-ModelRouterCostEstimate {
         ($worstVisible * $pricing.completion) +
         ($worstReasoning * $reasoningRate) +
         $pricing.request
-    $autoCap = if ($worst -le 0) { 0.0 } else { [Math]::Ceiling($worst * 1.15 * 10000) / 10000 }
+    $margin = switch ($Effort) {
+        'max' { 2.25 }
+        'xhigh' { 2.0 }
+        'high' { 1.85 }
+        'medium' { 1.5 }
+        default { 1.35 }
+    }
+    $autoCap = if ($worst -le 0) { 0.0 } else { [Math]::Ceiling($worst * $margin * 10000) / 10000 }
     return [PSCustomObject]@{
         inputTokens = $input.tokens
         inputBaseTokens = $input.baseTokens
@@ -634,6 +656,7 @@ function Get-ModelRouterOpenRouterCandidates {
         $rankSpec = Get-ModelRouterRankSpec -Ladder $Ladder -RankKey $rankKey
         $modelNames = @()
         if ($rankKey -eq 'rank3') {
+            Ensure-ModelRouterR3Allowlist -HubRoot $HubRoot -Catalog $Catalog | Out-Null
             $modelNames = @(Get-ModelRouterVerifiedR3Models -HubRoot $HubRoot)
         }
         else {

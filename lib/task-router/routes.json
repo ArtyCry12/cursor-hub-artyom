@@ -175,7 +175,8 @@
         "rank1.5",
         "r2",
         "r3",
-        "glm-5.2:free",
+        "model-worker",
+        "model route",
         "fish-audio",
         "mai-transcribe",
         "бесплатн модел",
@@ -188,11 +189,11 @@
         "через r1.5",
         "через r2",
         "через r3",
+        "model-worker",
         "бесплатные модели",
         "озвучь",
         "озвучка текста",
         "openrouter free",
-        "glm 5.2 free",
         "mai-transcribe"
       ],
       "tags": [
@@ -206,7 +207,7 @@
         "commands/openrouter-free-test.ps1"
       ],
       "mode": "agent",
-      "note": "Text/planning router only; do not Override OpenAI Base URL. Explicit R1.5/R2/R3 uses live pricing, personalized effort, auto budget cap, and local fallback. After Cursor limits use commands/model-route.ps1; no file tools until a future OpenCode decision."
+      "note": "Cursor parent owns tools. Prefer MCP model-worker route_preview/delegate for R1.5/R2/R3 intellectual stages (workers stay tool-less; keep route mcps empty). Terminal commands/model-route.ps1 is post-limit text fallback only. Live pricing, effort, atomic budget, shared-key remainder, verified R3 allowlist/seed. Do not Override OpenAI Base URL."
     },
     {
       "id": "seo-geo",

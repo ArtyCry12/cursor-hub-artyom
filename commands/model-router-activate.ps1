@@ -19,6 +19,9 @@ if ([int]$report.budgetViolations -gt [int]$rollout.gate.maximumBudgetViolations
 if ([int]$report.unexplainedExpensiveFallbacks -gt [int]$rollout.gate.maximumUnexplainedExpensiveFallbacks) {
     $failures.Add('expensive-fallback')
 }
+if ($report.PSObject.Properties['r3Failures'] -and [int]$report.r3Failures -gt 0) {
+    $failures.Add('r3-failures')
+}
 if (-not [bool]$report.activeReady) { $failures.Add('report-not-ready') }
 
 if ($failures.Count -gt 0) {

@@ -28,6 +28,11 @@ OpenRouter workers never receive Cursor file, shell, browser, or MCP tools.
 
 ## Budget and effort
 
+- Prefer MCP `model-worker` inside Cursor; keep Cursor as the tool parent.
+- CLI flags `-RequiresCursorTools` / `-CursorUnavailable` accept bare presence, `1`/`0`, or `true`/`false`.
+- Atomic local reserve + shared-key remainder; unpriced needs Boss yes.
+- Usable text with reservation overrun returns `completed_with_budget_overrun` (session hard cap still fails).
+- R3 uses verified allowlist; empty state is seeded from `lib/model-router/r3-allowlist.seed.json` when the slug is still in the live catalog.
 - Native effort scale: `none/minimal/low/medium/high/xhigh/max`.
 - Use the nearest supported effort and report any adjustment.
 - Luna Pro always uses `max`.

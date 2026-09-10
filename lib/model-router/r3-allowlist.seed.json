@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "note": "Trusted seed from last verified smoke. Applied only when allowlist is empty and the slug remains a live :free text model in the catalog.",
+  "models": {
+    "inclusionai/ling-3.0-flash-sante:free": {
+      "status": "verified",
+      "reason": "seed-from-verified-smoke"
+    }
+  }
+}

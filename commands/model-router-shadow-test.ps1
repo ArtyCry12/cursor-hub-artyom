@@ -1,21 +1,30 @@
 ﻿param(
     [string]$HubRoot = '',
-    [string]$OutFile = ''
+    [string]$OutFile = '',
+    [switch]$ForceBaseline
 )
 
 $ErrorActionPreference = 'Stop'
 if (-not $HubRoot) { $HubRoot = Split-Path $PSScriptRoot -Parent }
-if (-not $OutFile) {
-    $OutFile = Join-Path $HubRoot 'ai-tracking/ecosystem-governance/reports/2026-09-09-model-router-shadow.json'
+$stamp = [DateTimeOffset]::UtcNow.ToString('yyyyMMdd-HHmmss')
+$defaultRun = Join-Path $HubRoot ("ai-tracking/ecosystem-governance/reports/runs/model-router-shadow-{0}.json" -f $stamp)
+$baseline = Join-Path $HubRoot 'ai-tracking/ecosystem-governance/reports/2026-09-09-model-router-shadow.json'
+if (-not $OutFile) { $OutFile = $defaultRun }
+if ((Resolve-Path -LiteralPath (Split-Path $OutFile -Parent) -ErrorAction SilentlyContinue) -and
+    (([IO.Path]::GetFullPath($OutFile)) -eq ([IO.Path]::GetFullPath($baseline))) -and -not $ForceBaseline) {
+    throw "Refusing to overwrite baseline shadow report without -ForceBaseline. Use default run path or pass -ForceBaseline."
 }
+
 Import-Module (Join-Path $HubRoot 'lib/model-router/ModelRouter.psm1') -Force -DisableNameChecking -WarningAction SilentlyContinue
 
 $catalog = @(Get-OpenRouterCatalog -HubRoot $HubRoot -Refresh)
+Ensure-ModelRouterR3Allowlist -HubRoot $HubRoot -Catalog $catalog | Out-Null
+
 $cases = @(
     @{ id = 'en-plan-r15'; prompt = 'R1.5 plan the migration'; ranks = 'R1.5'; profile = 'general-worker'; target = 'openrouter-worker'; expectedRanks = @('rank1_5') },
     @{ id = 'en-batch-r2'; prompt = 'R2 fast batch classification'; ranks = 'R2'; profile = 'general-worker'; target = 'openrouter-worker'; expectedRanks = @('rank2') },
     @{ id = 'en-review-mixed'; prompt = 'R1.5, R2 adversarial review'; ranks = 'R1.5,R2'; profile = 'adversarial-hub-auditor'; target = 'openrouter-worker'; expectedRanks = @('rank1_5', 'rank2') },
-    @{ id = 'en-r3-draft'; prompt = 'R3 draft a short note'; ranks = 'R3'; profile = 'temporary-worker'; target = 'openrouter-worker'; expectedRanks = @('rank3') },
+    @{ id = 'en-r3-draft'; prompt = 'R3 draft a short note'; ranks = 'R3'; profile = 'temporary-worker'; target = 'openrouter-worker'; expectedRanks = @('rank3'); requireR3 = $true },
     @{ id = 'ecosystem-architecture'; prompt = 'Design the hub architecture'; ranks = 'R1.5,R2'; profile = 'ecosystem-architect'; target = 'openrouter-worker'; expectedRanks = @('rank1_5', 'rank2') },
     @{ id = 'dev-os-research'; prompt = 'Research a Dev OS decision'; ranks = 'R1.5,R2'; profile = 'dev-os-research'; target = 'openrouter-worker'; expectedRanks = @('rank1_5', 'rank2') },
     @{ id = 'adversarial-profile'; prompt = 'Audit the router risks'; ranks = 'R1.5,R2'; profile = 'adversarial-hub-auditor'; target = 'openrouter-worker'; expectedRanks = @('rank1_5', 'rank2') },
@@ -30,7 +39,7 @@ $cases = @(
     @{ id = 'general-r2'; prompt = 'R2 perform general analysis'; ranks = 'R2'; profile = 'general-worker'; target = 'openrouter-worker'; expectedRanks = @('rank2') },
     @{ id = 'ru-architecture'; prompt = 'R1.5, R2 спланируй архитектуру репозитория'; ranks = 'R1.5,R2'; profile = 'ecosystem-architect'; target = 'openrouter-worker'; expectedRanks = @('rank1_5', 'rank2') },
     @{ id = 'ru-batch'; prompt = 'R2 быстро классифицируй записи'; ranks = 'R2'; profile = 'temporary-worker'; target = 'openrouter-worker'; expectedRanks = @('rank2') },
-    @{ id = 'ru-r3'; prompt = 'R3 сделай короткий черновик'; ranks = 'R3'; profile = 'temporary-worker'; target = 'openrouter-worker'; expectedRanks = @('rank3') },
+    @{ id = 'ru-r3'; prompt = 'R3 сделай короткий черновик'; ranks = 'R3'; profile = 'temporary-worker'; target = 'openrouter-worker'; expectedRanks = @('rank3'); requireR3 = $true },
     @{ id = 'global-review'; prompt = 'Perform a strategic adversarial review'; profile = 'adversarial-hub-auditor'; target = 'cursor-native'; expectedRanks = @('cursor') }
 )
 
@@ -78,6 +87,7 @@ foreach ($case in $cases) {
         code = if ($route.ok) { 'recommendation' } else { $route.code }
         explanation = if ($route.ok) { $route.explanation } else { $null }
         passed = $passed
+        requireR3 = [bool]$case.requireR3
         reasons = [string[]]$reasons
     })
 }
@@ -87,6 +97,9 @@ $accuracy = $passedCount / [double]$cases.Count
 $policyViolations = @($results | Where-Object {
     $_.actualTarget -eq 'openrouter-worker' -and $_.expectedRanks.Count -gt 0 -and $_.expectedRanks -notcontains $_.actualRank
 }).Count
+$r3Required = @($results | Where-Object { $_.requireR3 })
+$r3Failures = @($r3Required | Where-Object { -not $_.passed }).Count
+$activeReady = ($accuracy -ge 0.9 -and $policyViolations -eq 0 -and $r3Failures -eq 0 -and $r3Required.Count -gt 0)
 $report = [PSCustomObject]@{
     schemaVersion = 1
     mode = 'shadow'
@@ -95,6 +108,8 @@ $report = [PSCustomObject]@{
     cases = $cases.Count
     passed = $passedCount
     accuracy = [Math]::Round($accuracy, 4)
+    r3Required = $r3Required.Count
+    r3Failures = $r3Failures
     policyConstraints = [PSCustomObject]@{
         total = $cases.Count
         violations = $policyViolations
@@ -104,7 +119,8 @@ $report = [PSCustomObject]@{
     inferenceCalls = 0
     actualSpendUsd = 0.0
     unexplainedExpensiveFallbacks = 0
-    activeReady = ($accuracy -ge 0.9 -and $policyViolations -eq 0)
+    activeReady = $activeReady
+    outFile = $OutFile
     results = [object[]]$results
 }
 

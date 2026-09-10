@@ -62,7 +62,7 @@
     "maxEphemeralAgents": 3,
     "nestedSpawn": false,
     "advisorPerTask": 1,
-    "localLatencyBudgetMs": 250
+    "localLatencyBudgetMs": 750
   },
   "receipt": {
     "requiredFields": ["system", "why", "evidence", "status"],

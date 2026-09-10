@@ -559,6 +559,43 @@ function Get-ModelRouterR3AllowlistPath {
     return (Join-Path (Get-ModelRouterRuntimeRoot -HubRoot $HubRoot -StateRoot $StateRoot) 'r3-allowlist.json')
 }
 
+function Get-ModelRouterR3SeedPath {
+    param([string]$HubRoot = '')
+    $root = Get-ModelRouterHubRoot -HubRoot $HubRoot
+    return (Join-Path $root 'lib/model-router/r3-allowlist.seed.json')
+}
+
+function Ensure-ModelRouterR3Allowlist {
+    param(
+        [string]$HubRoot = '',
+        [string]$StateRoot = '',
+        [object[]]$Catalog = @()
+    )
+    $root = Get-ModelRouterHubRoot -HubRoot $HubRoot
+    $existing = @(Get-ModelRouterVerifiedR3Models -HubRoot $root -StateRoot $StateRoot)
+    if ($existing.Count -gt 0) { return $existing }
+    $seedPath = Get-ModelRouterR3SeedPath -HubRoot $root
+    if (-not (Test-Path -LiteralPath $seedPath)) { return [string[]]@() }
+    $seed = Read-ModelRouterJson -Path $seedPath
+    if (-not $seed -or -not $seed.models) { return [string[]]@() }
+    $applied = New-Object System.Collections.Generic.List[string]
+    foreach ($property in @($seed.models.PSObject.Properties)) {
+        $model = [string]$property.Name
+        if (-not $model.EndsWith(':free', [StringComparison]::OrdinalIgnoreCase)) { continue }
+        if ($Catalog.Count -gt 0) {
+            $record = Get-OpenRouterModelRecord -Catalog $Catalog -Model $model
+            if (-not $record) { continue }
+        }
+        $status = [string](Get-ModelRouterPropertyValue $property.Value 'status')
+        if ($status -ne 'verified') { continue }
+        $reason = [string](Get-ModelRouterPropertyValue $property.Value 'reason')
+        if (-not $reason) { $reason = 'seed' }
+        Set-ModelRouterR3Verification -HubRoot $root -Model $model -Verified $true -Reason $reason -StateRoot $StateRoot
+        $applied.Add($model)
+    }
+    return [string[]]$applied
+}
+
 function Get-ModelRouterVerifiedR3Models {
     param(
         [string]$HubRoot = '',

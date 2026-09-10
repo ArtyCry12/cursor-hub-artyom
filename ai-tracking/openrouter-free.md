@@ -33,15 +33,15 @@ Cursor остаётся родителем tools. Явный `R1.5/R2/R3` (вк�
 
 ## Rank 3 — verified free text
 
-R3 — динамический allowlist live `:free` text после smoke/quality/privacy gate. Пустой пул → честный `r3_text_unavailable`, не broken call.
+R3 — динамический allowlist live `:free` text после smoke/quality/privacy gate. Пустой runtime state подхватывает [`lib/model-router/r3-allowlist.seed.json`](../lib/model-router/r3-allowlist.seed.json), если slug ещё есть в live catalog. Если после seed кандидатов нет → честный `r3_text_unavailable`.
 
-На 2026-09-09 verified text: `inclusionai/ling-3.0-flash-sante:free`. Кандидаты с 404 уходят в quarantine до half-open retry. Legacy TTS `fish-audio/s2.1-pro-free:free` остаётся отдельно через `openrouter.ps1 -Action tts`, не как ranked text worker.
+На 2026-09-09 verified/seed text: `inclusionai/ling-3.0-flash-sante:free`. Кандидаты с 404 уходят в quarantine до half-open retry. Legacy TTS `fish-audio/s2.1-pro-free:free` остаётся отдельно через `openrouter.ps1 -Action tts`, не как ranked text worker.
 
 ## Effort и бюджет
 
 Нативная шкала: `none/minimal/low/medium/high/xhigh/max`. Router читает supported efforts модели и выбирает ближайший допустимый. Thinking — часть `reasoning`, не второй независимый регулятор.
 
-Перед paid call: reserve local budget, проверить `GET /api/v1/key → limit_remaining`, согласовать `max_tokens` / reasoning bounds. Receipt содержит expected/worst и `usage.cost` (включая cache/request fees где есть). Unpriced candidate → pending confirmation, HTTP только после «да». Абсолютный dollar cutoff внутри уже начатого ответа — только через spend limit OpenRouter API key.
+Перед paid call: reserve local budget (margin выше для high/max), проверить `GET /api/v1/key → limit_remaining`, согласовать `max_tokens` / reasoning bounds. Пустой `message.content` → fallback на следующего кандидата. Usable text при overrun reserve → `completed_with_budget_overrun` (жёсткий fail только если session spend > BudgetUsd). Unpriced → pending confirmation. Абсолютный dollar cutoff mid-stream — только spend limit ключа OpenRouter.
 
 ## Мультимодал
 

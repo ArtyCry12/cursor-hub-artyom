@@ -1,0 +1,389 @@
+﻿{
+    "schemaVersion":  1,
+    "mode":  "shadow",
+    "generatedAt":  "2026-09-09T18:54:29.8355647+00:00",
+    "catalogModels":  430,
+    "cases":  20,
+    "passed":  20,
+    "accuracy":  1,
+    "r3Required":  2,
+    "r3Failures":  0,
+    "policyConstraints":  {
+                              "total":  20,
+                              "violations":  0,
+                              "passRate":  1
+                          },
+    "budgetViolations":  0,
+    "inferenceCalls":  0,
+    "actualSpendUsd":  0,
+    "unexplainedExpensiveFallbacks":  0,
+    "activeReady":  true,
+    "outFile":  "C:\\Users\\artyo\\.cursor\\ai-tracking\\ecosystem-governance\\reports\\runs\\model-router-shadow-20260909-185419.json",
+    "results":  [
+                    {
+                        "id":  "en-plan-r15",
+                        "promptHash":  "d03b151d99292332",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank1_5",
+                        "actualModel":  "qwen/qwen3.8-max-0902",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.68; intent=planning; score=85.170241",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "en-batch-r2",
+                        "promptHash":  "018801d08e2c68c8",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "deepseek/deepseek-v4-flash-0731",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.68; intent=batch; score=82.421255",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "en-review-mixed",
+                        "promptHash":  "9d83448e398b4315",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5",
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "openai/gpt-5.6-luna-pro",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.82; intent=review; score=89.558832",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "en-r3-draft",
+                        "promptHash":  "e136367617e1dd6a",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank3"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank3",
+                        "actualModel":  "inclusionai/ling-3.0-flash-sante:free",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.7; intent=general; score=77.5",
+                        "passed":  true,
+                        "requireR3":  true,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "ecosystem-architecture",
+                        "promptHash":  "c63147845140f700",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5",
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "openai/gpt-5.6-luna-pro",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.84; intent=architecture; score=89.518547",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "dev-os-research",
+                        "promptHash":  "cee4ff514c764671",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5",
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank1_5",
+                        "actualModel":  "qwen/qwen3.8-max-0902",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.78; intent=planning; score=85.122562",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "adversarial-profile",
+                        "promptHash":  "6642d0fe7ef339f2",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5",
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "openai/gpt-5.6-luna-pro",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.82; intent=review; score=89.558889",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "temporary-batch",
+                        "promptHash":  "2767a000579734d9",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "deepseek/deepseek-v4-flash-0731",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.7; intent=batch; score=82.421516",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "tool-apply",
+                        "promptHash":  "2ad7d2bfc78d8fee",
+                        "expectedTarget":  "cursor-parent",
+                        "expectedRanks":  [
+                                              "cursor"
+                                          ],
+                        "actualTarget":  "cursor-parent",
+                        "actualRank":  "cursor",
+                        "actualModel":  null,
+                        "code":  "recommendation",
+                        "explanation":  "Cursor tools are required; OpenRouter workers may only provide a separate reasoning stage.",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "tool-browser",
+                        "promptHash":  "2aa82436cbfa6dcf",
+                        "expectedTarget":  "cursor-parent",
+                        "expectedRanks":  [
+                                              "cursor"
+                                          ],
+                        "actualTarget":  "cursor-parent",
+                        "actualRank":  "cursor",
+                        "actualModel":  null,
+                        "code":  "recommendation",
+                        "explanation":  "Cursor tools are required; OpenRouter workers may only provide a separate reasoning stage.",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "tool-unavailable",
+                        "promptHash":  "dbc210793fd6ef7d",
+                        "expectedTarget":  null,
+                        "expectedRanks":  [
+                                              ""
+                                          ],
+                        "actualTarget":  null,
+                        "actualRank":  null,
+                        "actualModel":  null,
+                        "code":  "cursor_tools_unavailable",
+                        "explanation":  null,
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "multimodal-r2",
+                        "promptHash":  "2e9ca76629618122",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "google/gemini-3.8-flash",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.68; intent=multimodal; score=82.436094",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "critical-r2",
+                        "promptHash":  "3e3274426d4705c0",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "openai/gpt-5.6-luna-pro",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.84; intent=critical; score=89.51852",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "review-r15",
+                        "promptHash":  "f24a6b24a25948fb",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank1_5",
+                        "actualModel":  "x-ai/grok-4.6",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.82; intent=review; score=87.040533",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "plan-r15",
+                        "promptHash":  "d0f301d25d51a708",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank1_5",
+                        "actualModel":  "qwen/qwen3.8-max-0902",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.84; intent=architecture; score=85.069563",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "general-r2",
+                        "promptHash":  "2b99c777f4007f14",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "deepseek/deepseek-v4-pro-0813",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.68; intent=general; score=84.744494",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "ru-architecture",
+                        "promptHash":  "43dd4358a6fc50d0",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank1_5",
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "openai/gpt-5.6-luna-pro",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.84; intent=architecture; score=89.518064",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "ru-batch",
+                        "promptHash":  "b00d63f61ccde879",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank2"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank2",
+                        "actualModel":  "deepseek/deepseek-v4-flash-0731",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.7; intent=batch; score=82.421221",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "ru-r3",
+                        "promptHash":  "5b05f1540dc950e8",
+                        "expectedTarget":  "openrouter-worker",
+                        "expectedRanks":  [
+                                              "rank3"
+                                          ],
+                        "actualTarget":  "openrouter-worker",
+                        "actualRank":  "rank3",
+                        "actualModel":  "inclusionai/ling-3.0-flash-sante:free",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.7; intent=general; score=77.5",
+                        "passed":  true,
+                        "requireR3":  true,
+                        "reasons":  [
+
+                                    ]
+                    },
+                    {
+                        "id":  "global-review",
+                        "promptHash":  "dbdf582106c24e87",
+                        "expectedTarget":  "cursor-native",
+                        "expectedRanks":  [
+                                              "cursor"
+                                          ],
+                        "actualTarget":  "cursor-native",
+                        "actualRank":  "cursor",
+                        "actualModel":  "cursor-grok-4.6-high",
+                        "code":  "recommendation",
+                        "explanation":  "quality-floor=0.82; intent=review; score=91.8",
+                        "passed":  true,
+                        "requireR3":  false,
+                        "reasons":  [
+
+                                    ]
+                    }
+                ]
+}

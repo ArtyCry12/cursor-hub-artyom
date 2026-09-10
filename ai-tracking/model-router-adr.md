@@ -13,10 +13,11 @@ Hardening guarantees:
 - runtime circuit breaker for model health
 - atomic local budget reservation plus shared-key remainder check
 - unpriced models require an explicit Boss yes before inference
-- R3 is a verified live `:free` allowlist, not a static broken catalog
+- R3 is a verified live `:free` allowlist, bootstrapped from `lib/model-router/r3-allowlist.seed.json` when state is empty and the slug remains in catalog
+- empty completions fall back to the next candidate; reservation overrun with usable text returns `completed_with_budget_overrun`
 - legacy `openrouter.ps1 -Action chat` delegates into the same engine
 
-`commands/model-route.ps1` remains the terminal text/planning fallback after Cursor usage is exhausted. It has no Cursor tools.
+Parent Cursor owns MCP `model-worker`. Route `openrouter-free` keeps `mcps: []` so workers stay tool-less. Terminal `commands/model-route.ps1` remains the post-limit text fallback.
 
 ## Rollout
 

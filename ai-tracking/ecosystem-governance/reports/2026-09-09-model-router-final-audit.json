@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-09-09T17:45:00.000Z",
+  "branch": "feat/model-router-hardening",
+  "mode": "analysis-only",
+  "verdict": "alive_with_findings",
+  "criticalCount": 0,
+  "openRouterSpendUsd": 0.0491922,
+  "suites": {
+    "contractPs5": 0,
+    "contractPs7": 0,
+    "concurrency": 0,
+    "legacy": 0,
+    "shadow": 0,
+    "taskRouterContract": 1,
+    "taskRouterHook": 0,
+    "mcp": 0
+  },
+  "findings": [
+    {
+      "id": "R3-COLD-STATE",
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "id": "SHADOW-GATE-R3",
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "id": "BUDGET-OVERRUN-AFTER-CALL",
+      "severity": "high",
+      "status": "open"
+    },
+    {
+      "id": "TR-ROUTE-DRIFT",
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "id": "SHADOW-OVERWRITE",
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "id": "TR-P95-BUDGET",
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "id": "LUNA-REASONING-EMPTY",
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "id": "R3-EMPTY-JSON",
+      "severity": "medium",
+      "status": "open"
+    },
+    {
+      "id": "INTENT-WORD-COLLISION",
+      "severity": "low",
+      "status": "open"
+    },
+    {
+      "id": "CLI-SWITCH-BOOL",
+      "severity": "low",
+      "status": "open"
+    },
+    {
+      "id": "MCP-CLOSE-FLAKE",
+      "severity": "low",
+      "status": "open"
+    },
+    {
+      "id": "GITNEXUS-PS-GAP",
+      "severity": "below-low",
+      "status": "open"
+    },
+    {
+      "id": "ROUTE-MCPS-EMPTY-DOC",
+      "severity": "below-low",
+      "status": "open"
+    }
+  ]
+}

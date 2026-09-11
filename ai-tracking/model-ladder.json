@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "updatedAt": "2026-09-09T14:45:00.000Z",
+  "updatedAt": "2026-09-11T15:40:00.000Z",
   "notes": "Static model policy only. Live catalog metadata is refreshed from OpenRouter. Mutable health, calibration, R3 allowlist, and session ledgers live under .cache/model-router and are never committed.",
   "aliases": {
     "boss.top": "rank1.top",
@@ -55,7 +55,7 @@
     "policy": "planning-replacement-with-auto-budget-cap",
     "chatOrder": [
       "z-ai/glm-5.3",
-      "meta/muse-spark-1.2",
+      "meta/muse-spark-1.3",
       "qwen/qwen3.8-max-0902",
       "x-ai/grok-4.6"
     ],
@@ -94,10 +94,10 @@
         "supportedEfforts": ["minimal", "low", "medium", "high", "xhigh"],
         "defaultEffort": "xhigh"
       },
-      "meta/muse-spark-1.2": {
+      "meta/muse-spark-1.3": {
         "status": "degraded",
-        "probedAt": "2026-09-09",
-        "lastProbeNote": "HTTP 403; keep and recheck",
+        "probedAt": "2026-09-11",
+        "lastProbeNote": "18+ attestation done; now blocked by account ZDR privacy setting: single endpoint not ZDR -> 404 (settings/privacy); keep and recheck",
         "catalogStatus": "present",
         "catalogCheckedAt": "2026-09-09",
         "modality": ["text"],
@@ -115,6 +115,7 @@
       "z-ai/glm-5.2",
       "deepseek/deepseek-v4-pro-0813",
       "deepseek/deepseek-v4-flash-0731",
+      "deepseek/deepseek-v4.1-flash",
       "z-ai/glm-5.3-flash",
       "google/gemini-3.8-flash"
     ],
@@ -163,6 +164,19 @@
         "reasoningMandatory": false,
         "supportedEfforts": ["low", "high", "max"],
         "defaultEffort": "high"
+      },
+      "deepseek/deepseek-v4.1-flash": {
+        "status": "live",
+        "probedAt": "2026-09-11",
+        "lastProbeNote": "Router OK (DS41_FINAL_OK, 0.15/0.60); requires skipMaxPriceCap=true — ZDR endpoints priced above 1.05x min and max_price cap filtered them out",
+        "catalogStatus": "present",
+        "catalogCheckedAt": "2026-09-11",
+        "modality": ["text"],
+        "role": "mid-fast",
+        "reasoningMandatory": false,
+        "supportedEfforts": ["low", "high", "max"],
+        "defaultEffort": "high",
+        "skipMaxPriceCap": true
       },
       "z-ai/glm-5.3-flash": {
         "status": "live",

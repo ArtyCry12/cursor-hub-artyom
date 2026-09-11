@@ -20,14 +20,14 @@ Cursor остаётся родителем tools. Явный `R1.5/R2/R3` (вк�
 - `z-ai/glm-5.3` — default planning.
 - `x-ai/grok-4.6` — adversarial/review.
 - `qwen/qwen3.8-max-0902` — long-context/code architecture.
-- `meta/muse-spark-1.2` — balanced synthesis.
+- `meta/muse-spark-1.3` — balanced synthesis (18+ подтверждён; пока заблокирован аккаунтной ZDR-настройкой — recheck после изменения privacy).
 
 ## Rank 2 — paid workers
 
 - `openai/gpt-5.6-luna-pro` — critical worker, только `max`.
 - `z-ai/glm-5.2` — general worker.
 - `deepseek/deepseek-v4-pro-0813` — strong worker.
-- `deepseek/deepseek-v4-flash-0731`, `z-ai/glm-5.3-flash` — fast/batch.
+- `deepseek/deepseek-v4-flash-0731`, `deepseek/deepseek-v4.1-flash`, `z-ai/glm-5.3-flash` — fast/batch.
 - `google/gemini-3.8-flash` — multimodal fast.
 - `microsoft/mai-transcribe-2` — legacy STT, `-BossYes`.
 

@@ -98,6 +98,7 @@ function Get-MidChatModels {
     'z-ai/glm-5.2',
     'deepseek/deepseek-v4-pro-0813',
     'deepseek/deepseek-v4-flash-0731',
+    'deepseek/deepseek-v4.1-flash',
     'z-ai/glm-5.3-flash',
     'google/gemini-3.8-flash'
   )

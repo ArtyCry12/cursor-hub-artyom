@@ -104,6 +104,7 @@ function New-ModelRouterRequestBody {
         [Parameter(Mandatory)]$ReasoningMetadata,
         [Parameter(Mandatory)]$CatalogRecord,
         [Parameter(Mandatory)]$Estimate,
+        [switch]$SkipMaxPriceCap,
         [switch]$Sensitive,
         [switch]$StructuredOutput,
         [switch]$Creative
@@ -120,7 +121,7 @@ function New-ModelRouterRequestBody {
         data_collection = 'deny'
     }
     if ($Sensitive) { $provider.zdr = $true }
-    if ($Estimate.promptPerMillion -gt 0 -or $Estimate.completionPerMillion -gt 0) {
+    if (-not $SkipMaxPriceCap -and ($Estimate.promptPerMillion -gt 0 -or $Estimate.completionPerMillion -gt 0)) {
         $provider.max_price = [ordered]@{
             prompt = [Math]::Round($Estimate.promptPerMillion * 1.05, 6)
             completion = [Math]::Round($Estimate.completionPerMillion * 1.05, 6)
@@ -347,7 +348,8 @@ function Invoke-ModelRouterChat {
         }
         $body = New-ModelRouterRequestBody -Prompt $Prompt -SystemPrompt $systemPrompt -Model $candidate `
             -Effort $effortResult.selected -ReasoningMetadata $effortResult.metadata -CatalogRecord $record `
-            -Estimate $estimate -Sensitive:$Sensitive -StructuredOutput:$StructuredOutput -Creative:$Creative
+            -Estimate $estimate -SkipMaxPriceCap:([bool](Get-ModelRouterPropertyValue $config 'skipMaxPriceCap')) `
+            -Sensitive:$Sensitive -StructuredOutput:$StructuredOutput -Creative:$Creative
         $headers = @{
             Authorization = "Bearer $key"
             'HTTP-Referer' = 'https://cursor.local/hub'

@@ -382,7 +382,7 @@ function Select-ModelRouterModel {
             'planning' { return 'z-ai/glm-5.3' }
             default {
                 if ($Prompt -match '(?i)(?<![\p{L}\p{N}_])(creative|synthesis|варианты|синтез|обобщение)(?![\p{L}\p{N}_])') {
-                    return 'meta/muse-spark-1.2'
+                    return 'meta/muse-spark-1.3'
                 }
                 return 'z-ai/glm-5.3'
             }

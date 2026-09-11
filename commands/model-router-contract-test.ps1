@@ -60,7 +60,7 @@ $catalog = @(
     (New-CatalogRecord 'z-ai/glm-5.3' @('max', 'high', 'low') -Mandatory $true),
     (New-CatalogRecord 'x-ai/grok-4.6' @('xhigh', 'high', 'medium', 'low') -Mandatory $true),
     (New-CatalogRecord 'qwen/qwen3.8-max-0902' @('xhigh', 'high', 'medium', 'low', 'minimal') -Mandatory $true),
-    (New-CatalogRecord 'meta/muse-spark-1.2' @('xhigh', 'high', 'medium', 'low', 'minimal') -Mandatory $true),
+    (New-CatalogRecord 'meta/muse-spark-1.3' @('xhigh', 'high', 'medium', 'low', 'minimal') -Mandatory $true),
     (New-CatalogRecord 'openai/gpt-5.6-luna-pro' @('max', 'xhigh', 'high', 'medium', 'low', 'none') 0.0000002 0.0000012 @(
         [PSCustomObject]@{ min_prompt_tokens = 272000; prompt = '0.0000004'; completion = '0.0000018' }
     )),

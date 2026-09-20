@@ -28,12 +28,22 @@ Adapted from Anthropic `code-review@claude-plugins-official`. **Read-only** unti
 1. **Eligibility** (Haiku-tier or fast pass): closed? draft? trivial? already reviewed? → stop.
 2. **Guidelines**: list paths to `AGENTS.md`, `CLAUDE.md`, and `CLAUDE.md` in dirs touched by PR (paths only first).
 3. **PR summary**: `gh pr view` + `gh pr diff` — short change summary.
-4. **Parallel review** (spawn `squad-review` or Task reviewers):
+4. **Optional PR-Agent checkpoint** for a substantive GitHub PR:
+   - Ask the user once: **«Подключить PR-Agent для дополнительной независимой проверки? Да/Нет»**.
+   - Ask only for code/config changes with meaningful risk; skip docs-only, draft, trivial, and already-reviewed PRs.
+   - **Нет** → continue this skill unchanged and do not ask again for the same PR in the current conversation.
+   - **Да** → use an already configured project adapter or the optional template at
+     `templates/qa/pr-agent-review.yml`. If the adapter/secret is missing,
+     explain the exact setup needed and continue the local review; do not
+     install workflows, request secrets, or activate external review silently.
+   - PR-Agent output is advisory. Never auto-merge, auto-improve, or apply its
+     suggestions without a separate human decision.
+5. **Parallel review** (spawn `squad-review` or Task reviewers):
    - Compliance vs AGENTS.md/CLAUDE.md
    - Obvious bugs in diff only (no pre-existing nitpicks)
    - Git blame / history context for changed lines
    - Prior PR comments on same files
-4b. **Optional dual fanout** (when Boss says `dual review` / high-risk PR):
+5b. **Optional dual fanout** (when Boss says `dual review` / high-risk PR):
    - Spawn two reviewer Tasks in parallel (e.g. GPT + Sonnet family via available Task models)
    - Merge issue lists; keep only items both agree on **or** single-reviewer score ≥ 90
    - Still filter final list to confidence **≥ 80** before reporting

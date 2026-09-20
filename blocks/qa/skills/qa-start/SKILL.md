@@ -24,5 +24,9 @@ Upstream: `C:/Users/Asus/.agents/skills/qa-start/SKILL.md`
 
 ## Routing note
 
-- Squad verification loop → `squad-qa` subagent
+- Project Squad verification is archived; use the active QA/review routes and
+  ephemeral reviewers instead of restoring `squad-qa`
 - Greenfield QA setup protocol → **this** skill
+- Optional CI review layer → `blocks/qa/pr-agent-adapter.md` and
+  `templates/qa/pr-agent-review.yml` (copy into a project only after approval;
+  no automatic installation)

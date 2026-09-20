@@ -7,7 +7,7 @@ alwaysApply: false
 
 # SEO / GEO (Aaron He Zhu pack)
 
-Load skill: `C:/Users/Asus/.cursor/skills/seo-geo/SKILL.md`
+Load skill: `blocks/seo-geo-aio/skills/seo-geo/SKILL.md`
 
 ## Quick route
 
@@ -16,6 +16,8 @@ Load skill: `C:/Users/Asus/.cursor/skills/seo-geo/SKILL.md`
 | Unknown SEO task | `/aaron:auto` mental model — smallest useful workflow |
 | Full audit | `optimize/on-page-seo-auditor` + `optimize/technical-seo-checker` |
 | GEO / AI citations | `cross-cutting/domain-authority-auditor` + `build/geo-content-optimizer` |
+| AI-видимость / краулеры / GBP / GA4 AI-traffic | `skills/ai-search-optimization` (operational GEO/AIO skill) |
+| Миграция сайта без потери трафика | `playbooks/site-migration.md` |
 | Keywords | `research/keyword-research` |
 | Publish gate | `cross-cutting/content-quality-auditor` (CORE-EEAT) |
 
@@ -29,7 +31,9 @@ Docs: `docs/knowledge-base/SEO-STACK.md`
 
 - **Primary web research:** plugin-exa-exa
 - **Perf API:** PageSpeed (`secrets.local.json` → `PAGESPEED_API_KEY`)
-- **GSC auto-connect:** blocked until full Google OAuth — see `GOOGLE-STACK-LITE.md`
+- **GSC/GA4 (SA):** `node blocks/seo-geo-aio/scripts/gsc-ga4-pull.mjs --site <URL> [--ga4]` — нужен `GOOGLE_SERVICE_ACCOUNT_JSON` (SA-ключ вне репо, email SA добавить в GSC property + GA4 Viewer); setup в шапке скрипта
+- **AI-visibility (Brand Radar slot):** `node blocks/seo-geo-aio/scripts/ai-visibility-tracker.mjs` — нужен `GEMINI_API_KEY` (free tier); симуляция AI-ответов, не Brand Radar-эквивалент
+- **LLM provider:** `gemini` (user-gemini) — где уместно вместо прямых вызовов
 
 ## Memory handoff
 

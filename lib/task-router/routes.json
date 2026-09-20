@@ -362,7 +362,10 @@
         "perplexity",
         "chatgpt search",
         "answer engine",
-        "geo citation"
+        "geo citation",
+        "ai visibility",
+        "ai traffic",
+        "query fan"
       ],
       "phrases": [
         "ai search optimization",
@@ -373,6 +376,10 @@
         "@ai-search-optimization"
       ],
       "skill": "blocks/seo-geo-aio/skills/ai-search-optimization/SKILL.md",
+      "commands": [
+        "blocks/seo-geo-aio/scripts/ai-visibility-tracker.mjs",
+        "blocks/seo-geo-aio/scripts/gsc-ga4-pull.mjs"
+      ],
       "mode": "agent"
     },
     {
@@ -1228,6 +1235,7 @@
       ],
       "commands": [
         "blocks/seo-geo-aio/commands/gsc-audit.ps1",
+        "blocks/seo-geo-aio/scripts/gsc-ga4-pull.mjs",
         "commands/ensure-google-mcp.ps1"
       ],
       "mode": "agent",

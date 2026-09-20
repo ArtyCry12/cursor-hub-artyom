@@ -39,3 +39,14 @@ node skills/seo-geo/scripts/init-seo-geo-memory.mjs <project-root>
 ## Scale note
 
 Mass generation is **opt-in per campaign**, not automatic on hub install.
+
+## Funnel priority (normalized 2026-09-17, sources: Surfer/Rush/Diggity)
+
+Порядок запуска — снизу воронки вверх, не «по списку keywords»:
+
+1. **Money pages first** — product/service/pricing страницы, конвертирующие запросы. Без них трафик никуда не ведёт (типичная ошибка: 10 инфостатьей и ноль продаж).
+2. **Один кластер за раз** — выбрать кластер, связанный с money page, достроить полный воронки-контент (commercial comparison → educational), интерлинк на money page. Закончить кластер до старта следующего. Распыление по 10 темам параллельно удлиняет выход на результаты: Google оценивает полноту покрытия funnel, не отдельные страницы.
+3. **Curiosity-gap фильтр** для информационных запросов: избегать чистых определений («что такое X») — их закрывает AI Overview zero-click. Брать сравнения/решения/планирование («X vs Y», «как часто», «лучший для <ситуация>»), где обзор не закрывает потребность и клик остаётся.
+4. **Извлекаемость** (GEO-проход): прямой ответ в первых предложениях, TL;DR, заголовки-вопросы, HTML-таблицы, alt-текст — чек-лист в `skills/ai-search-optimization/SKILL.md` (Workflow 4).
+
+Draft pipeline без изменений; эти 4 правила применяются на шаге «brief per URL» и при выборе следующего кластера.

@@ -1,0 +1,77 @@
+{
+  "schema_version": "1.0.0",
+  "project": {
+    "domain": "https://fixture.example",
+    "brand": "FixtureCo",
+    "brand_variants": ["Fixture Co", "fixtureco"],
+    "locale": "en-US"
+  },
+  "captured_at": "2026-09-21T12:00:00.000Z",
+  "entries": [
+    {
+      "id": "fx-001",
+      "prompt": "best patio cleaning service near me",
+      "platform": "chatgpt",
+      "evidence_class": "ai_answer_manual",
+      "confidence": "medium",
+      "fan_out": [
+        {
+          "query": "patio cleaning vs pressure washing",
+          "kind": "comparative",
+          "covered_by_site": false
+        },
+        {
+          "query": "how often to clean patio stones",
+          "kind": "procedural",
+          "covered_by_site": true
+        }
+      ],
+      "brands_named": ["RivalClean", "HomePro"],
+      "sources_cited": [
+        {
+          "url": "https://rivalclean.example/guide",
+          "title": "Patio cleaning guide",
+          "is_own": false
+        }
+      ],
+      "own_citation": false,
+      "own_recommendation": false,
+      "gap_type": "competitor",
+      "chunk": {
+        "extractable": false,
+        "bluf": false,
+        "atomic": false,
+        "notes": "No FixtureCo page ranked or cited; need comparative money-page chunk"
+      },
+      "raw_ref": "ai-tracking/seo-signals/fixtureco/manual-note-2026-09-21.md",
+      "brief_slug": "patio-cleaning-vs-pressure-washing"
+    },
+    {
+      "id": "fx-002",
+      "prompt": "FixtureCo patio cleaning review",
+      "platform": "gemini",
+      "evidence_class": "model_memory_tracker",
+      "confidence": "low",
+      "fan_out": [
+        {
+          "query": "FixtureCo reviews",
+          "kind": "evaluative",
+          "covered_by_site": true
+        }
+      ],
+      "brands_named": ["FixtureCo"],
+      "sources_cited": [],
+      "own_citation": false,
+      "own_recommendation": true,
+      "gap_type": "citation",
+      "chunk": {
+        "extractable": true,
+        "bluf": true,
+        "atomic": true,
+        "notes": "Brand remembered; no own URL cited — citation gap"
+      },
+      "raw_ref": "ai-tracking/seo-signals/fixtureco/ai-visibility-2026-09-21.json",
+      "brief_slug": "fixtureco-reviews-entity"
+    }
+  ]
+}

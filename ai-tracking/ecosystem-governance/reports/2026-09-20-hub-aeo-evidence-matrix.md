@@ -2,6 +2,8 @@
 
 Scope: Cursor hub only. `projects/agency-site-prod` is explicitly out of scope.
 
+Follow-up (separate source, do not merge): [`2026-09-21-geo-agent-transcript-evidence.md`](2026-09-21-geo-agent-transcript-evidence.md) for transcript `wBMAATs2Yc0`.
+
 Sources reviewed:
 
 - `tactiq-free-transcript-58MR03s0ev8 - AEo скилл.txt`

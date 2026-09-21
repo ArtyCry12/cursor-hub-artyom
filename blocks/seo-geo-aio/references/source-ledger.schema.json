@@ -1,0 +1,165 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor-hub.local/seo-geo-aio/source-ledger.schema.json",
+  "title": "GEO source-chunk evidence ledger",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "project", "captured_at", "entries"],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0.0"
+    },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["domain", "brand", "locale"],
+      "properties": {
+        "domain": { "type": "string", "minLength": 1 },
+        "brand": { "type": "string", "minLength": 1 },
+        "brand_variants": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": []
+        },
+        "locale": { "type": "string", "minLength": 2 }
+      }
+    },
+    "captured_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/entry" }
+    }
+  },
+  "$defs": {
+    "entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "prompt",
+        "platform",
+        "evidence_class",
+        "confidence",
+        "fan_out",
+        "brands_named",
+        "sources_cited",
+        "own_citation",
+        "own_recommendation",
+        "gap_type",
+        "chunk"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "prompt": { "type": "string", "minLength": 1 },
+        "platform": {
+          "type": "string",
+          "enum": [
+            "google_aio",
+            "google_ai_mode",
+            "chatgpt",
+            "perplexity",
+            "gemini",
+            "claude",
+            "bing",
+            "other"
+          ]
+        },
+        "evidence_class": {
+          "type": "string",
+          "enum": [
+            "organic_serp",
+            "aio_block",
+            "ai_answer_manual",
+            "model_memory_tracker",
+            "grounded_tracker"
+          ]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low", "hypothesis"]
+        },
+        "fan_out": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["query", "kind"],
+            "properties": {
+              "query": { "type": "string" },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "definitional",
+                  "comparative",
+                  "procedural",
+                  "evaluative",
+                  "other"
+                ]
+              },
+              "covered_by_site": { "type": "boolean" }
+            }
+          }
+        },
+        "brands_named": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "sources_cited": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["url"],
+            "properties": {
+              "url": { "type": "string" },
+              "title": { "type": "string" },
+              "is_own": { "type": "boolean" }
+            }
+          }
+        },
+        "own_citation": {
+          "type": "boolean",
+          "description": "Own URL appears as a cited source"
+        },
+        "own_recommendation": {
+          "type": "boolean",
+          "description": "Brand named as the recommended solution"
+        },
+        "gap_type": {
+          "type": "string",
+          "enum": [
+            "none",
+            "citation",
+            "competitor",
+            "topic",
+            "unknown"
+          ]
+        },
+        "chunk": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["extractable", "bluf", "atomic"],
+          "properties": {
+            "extractable": { "type": "boolean" },
+            "bluf": { "type": "boolean" },
+            "atomic": { "type": "boolean" },
+            "notes": { "type": "string" }
+          }
+        },
+        "raw_ref": {
+          "type": "string",
+          "description": "Path to hub snapshot under ai-tracking/seo-signals/ or project note"
+        },
+        "brief_slug": {
+          "type": "string",
+          "description": "Target seo/briefs/<slug>.md when handed off"
+        }
+      }
+    }
+  }
+}

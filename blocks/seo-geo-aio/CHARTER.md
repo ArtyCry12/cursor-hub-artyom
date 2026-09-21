@@ -19,7 +19,8 @@ research → semantics → content strategy → on-page/tech → GEO/AIO visibil
 | SECONDARY | Hub helpers | `entity-seo`, `programmatic-seo`, `seo-audit`, `ai-search-optimization`, `core-web-vitals`, `site-compliance-audit` |
 | FALLBACK | Alternate pack | `opc-seo-geo` (keep routed; prefer seo-geo first) |
 | Commands | Ops | `commands/seo-audit.ps1`, `seo-stack-verify.ps1`, `gsc-audit.ps1`, `pagespeed-audit.ps1` |
-| Squad | Delivery | `squad-growth` (+ marketing when copy) |
+| Delivery | Parent agent | `seo-geo` / `ai-search-optimization` routes; Architect owns block health only |
+| Evidence | GEO contracts | `references/geo-e2e-workflow.md`, `source-ledger.schema.json`, `project-preflight.md` |
 
 ## Router
 

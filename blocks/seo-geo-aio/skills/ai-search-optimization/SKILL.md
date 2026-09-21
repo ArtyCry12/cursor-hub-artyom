@@ -6,7 +6,7 @@ description: >-
   GA4 AI traffic tracking, extractability (AIO reverse-engineering).
   Triggers: aeo, geo citations, llms.txt, @ai-search-optimization, ai visibility,
   ai traffic, query fan.
-version: "2.0.0"
+version: "2.1.0"
 license: MIT
 compatibility: cursor
 metadata:
@@ -31,6 +31,12 @@ when_to_use: aeo_geo, citation_gap_audit, ai_crawler_policy, gbpp_consensus, ai_
 
 Фактическая база: [../../references/ai-search-2026.md](../../references/ai-search-2026.md) — все утверждения сверены с источниками 2026; устаревшие тактики источников там помечены.
 
+Evidence contracts (Wave 1):
+
+- [../../references/geo-e2e-workflow.md](../../references/geo-e2e-workflow.md) — E2E stages, search-first, confidence, citation vs recommendation
+- [../../references/project-preflight.md](../../references/project-preflight.md) — brand/domain/locale + `seo/` dirs + hub signals mapping
+- [../../references/source-ledger.schema.json](../../references/source-ledger.schema.json) — machine-readable ledger
+
 ## Core model: три механизма GEO (складываются, не заменяют)
 
 Нейросеть собирает ответ по трём независимым каналам; работа нужна по каждому:
@@ -41,18 +47,33 @@ when_to_use: aeo_geo, citation_gap_audit, ai_crawler_policy, gbpp_consensus, ai_
 
 ## Workflow 1: Citation-gap аудит (базовый вход)
 
-Вход: домен/бренд + ниша. Метод Burdukov × Diggity (Brand Radar опционально платный).
+Вход: домен/бренд + ниша после [`project-preflight.md`](../../references/project-preflight.md). Метод Burdukov × Diggity (Brand Radar опционально платный).
+
+### Search-first gate
+
+До утверждений про fan-out / SERP / citation собери хотя бы один primary capture (см. [`geo-e2e-workflow.md`](../../references/geo-e2e-workflow.md)). Ungrounded `ai-visibility-tracker` = только `model_memory_tracker` (confidence ≤ low), не SERP/QFS dataset.
+
+### Citation vs recommendation
+
+Фиксируй отдельно:
+
+- **own_citation** — свой URL в источниках ответа;
+- **own_recommendation** — бренд назван решением («бери X»).
+
+Бизнесу обычно важнее recommendation; citation нужен для extractability / visibility отчётов.
 
 **Автоматизация (self-host, free):**
-- Запросы из GSC: `node blocks/seo-geo-aio/scripts/gsc-ga4-pull.mjs --site <URL> [--ga4]` — топ-запросы с кликами → кандидаты на проверку (нужен `GOOGLE_SERVICE_ACCOUNT_JSON` в secrets.local.json; setup — в шапке скрипта)
+- Запросы из GSC: `node blocks/seo-geo-aio/scripts/gsc-ga4-pull.mjs --site <URL> [--ga4]` — топ-запросы с кликами → кандидаты на проверку (нужен `GOOGLE_SERVICE_ACCOUNT_JSON` в secrets.local.json; setup — в шапке скрипта). Raw → hub `ai-tracking/seo-signals/<host>/`.
 - Проверка ответов: `node blocks/seo-geo-aio/scripts/ai-visibility-tracker.mjs --brand "Бренд" --queries-file queries.txt --lang ru` — по умолчанию проверяет model-memory footprint без real-time поиска и пишет снапшоты в `ai-tracking/seo-signals/<brand>/` (нужен `GEMINI_API_KEY`; работает на free tier). Реальный Gemini Search grounding включается только явным `--grounded` и требует paid-tier entitlement; free-tier ключи возвращают `429`.
 - Ручной путь без ключей: та же таблица заполняется руками (ниже)
+- Нормализация: скопируй/сверни captures в project `seo/evidence/<date>-ledger.json` по [`source-ledger.schema.json`](../../references/source-ledger.schema.json)
 
-1. **Fan-out декомпозиция**: разбей 5–10 коммерческих запросов ниши на подзапросы (definitional, comparative, procedural, evaluative). Проверить: какие подзапросы сайт закрывает, какие нет.
+1. **Fan-out декомпозиция** (после search-first): разбей 5–10 коммерческих запросов ниши на подзапросы (definitional, comparative, procedural, evaluative). Проверить: какие подзапросы сайт закрывает, какие нет.
 2. **Возьми 10 запросов из GSC** (или из вывода `gsc-ga4-pull`), по которым реально приходят клиенты (не «красивые»).
-3. **Проверь видимость**: задай каждый запрос в ChatGPT / Perplexity / Gemini / AI Mode (чистая сессия/incognito — модели подстраиваются под историю). Для бесплатного локального замера model-memory используй `ai-visibility-tracker.mjs`; для real-time/AIO grounding используй ручной путь или paid-tier `--grounded`. Фиксируй в таблицу:
-   - назван ли бренд; кто назван вместо; какие **источники** цитируются (бренд ≠ источник: LLM может ссылаться на подборку, где бренд упомянут)
+3. **Проверь видимость**: задай каждый запрос в ChatGPT / Perplexity / Gemini / AI Mode (чистая сессия/incognito — модели подстраиваются под историю). Для бесплатного локального замера model-memory используй `ai-visibility-tracker.mjs`; для real-time/AIO grounding используй ручной путь или paid-tier `--grounded`. Фиксируй в ledger:
+   - назван ли бренд (**recommendation**); кто назван вместо; какие **источники** цитируются (**citation**; бренд ≠ источник)
    - что говорят о конкурентах (цены, фичи, формулировки — это требования к твоей странице)
+   - `evidence_class` + `confidence` (high/medium/low/hypothesis)
 4. **Вердикты** (один из трёх):
    - «Не знает вообще» → нет шлейфа: нужна консенсус-работа (Workflow 3) + проверка краулинга (Workflow 2)
    - «Знает частично» (одна платформа знает, другая нет) → работают разные источники; работать с источниками каждой
@@ -63,7 +84,7 @@ when_to_use: aeo_geo, citation_gap_audit, ai_crawler_policy, gbpp_consensus, ai_
    - **citation gap** — бренд упомянут, но собственный сайт/страница не является источником;
    - **competitor gap** — конкурент назван в ответе, бренд отсутствует;
    - **topic gap** — модель знает категорию, но не связывает бренд с нужной темой или use case.
-   Сохраняй для каждого prompt: платформу, подзапросы fan-out, названные бренды, источники, позиционирование и тип gap.
+   Сохраняй для каждого prompt в ledger: платформу, подзапросы fan-out, brands_named, sources_cited, own_citation, own_recommendation, chunk flags, gap_type, confidence, raw_ref.
 
 ## Workflow 2: AI crawler policy (robots.txt)
 
@@ -147,9 +168,30 @@ YouTube — отдельный канал исследования: бери eve
 - Маршрут: `ai-search-optimization` в `lib/task-router/routes.json` (триггеры: aeo, llms.txt, ai overviews, perplexity, ai visibility, ai traffic, query fan)
 - Правило: `blocks/seo-geo-aio/rules/seo-geo.mdc`
 - knowledge-base: `blocks/seo-geo-aio/references/ai-search-2026.md`
+- evidence: `blocks/seo-geo-aio/references/geo-e2e-workflow.md`, `project-preflight.md`, `source-ledger.schema.json`
+- content-engine: `blocks/seo-geo-aio/content-engine.md`
 - playbook миграции сайтов: `blocks/seo-geo-aio/playbooks/site-migration.md`
 - llms.txt: генерировать можно, ждать эффекта не стоит — Google официально не использует (см. knowledge-base §5)
 
 ## Handoff
 
-Фиксировать в отчёте: вердикты citation-gap (по 3 платформам), список источников-цитаторов, найденные блокировки краулеров, NAP-проблемы, AI-traffic снапшот GA4. Следующий шаг обычно: `library/build/geo-content-optimizer` (контент) или `playbooks/site-migration.md` (если сайт пересобирается).
+### Evidence → brief
+
+Из каждой ledger entry с actionable gap создай `seo/briefs/<brief_slug>.md`:
+
+| Brief field | From ledger |
+|-------------|-------------|
+| target query / prompt | `prompt` |
+| fan-out subqueries | `fan_out` |
+| gap type | `gap_type` |
+| cited sources | `sources_cited` |
+| citation vs recommendation | `own_citation`, `own_recommendation` |
+| chunk / extractability | `chunk` |
+| confidence | `confidence` (brief ≤ lowest supporting row) |
+| ledger_ref | `seo/evidence/...#entry.id` |
+
+Затем: `library/build/geo-content-optimizer` (через `skills/seo-geo`). Persona `ai-citation-strategist` читает тот же ledger — без параллельного scorecard.
+
+### Report checklist
+
+Фиксировать: вердикты citation-gap (по платформам), own_citation vs own_recommendation, источники-цитаторы, блокировки краулеров, NAP-проблемы, AI-traffic снапшот GA4, путь к `seo/evidence/` ledger. Альтернатива при пересборке сайта: `playbooks/site-migration.md`.

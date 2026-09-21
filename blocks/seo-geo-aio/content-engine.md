@@ -2,12 +2,17 @@
 
 Capability target: programs of **1000+** supporting articles. This file is the **skeleton only**.
 
+Evidence contracts: [`references/geo-e2e-workflow.md`](references/geo-e2e-workflow.md), [`references/project-preflight.md`](references/project-preflight.md), [`references/source-ledger.schema.json`](references/source-ledger.schema.json).
+
 ## Pipeline
 
 ```
 seed topics / products
+  → project preflight (brand, domain, locale, seo/ dirs)
+  → search-first evidence + fan-out (ai-search-optimization)
+  → source-chunk ledger → seo/evidence/
   → semantic clusters (keyword-research + content-gap)
-  → brief per URL (intent, entities, internal links, GEO angle)
+  → brief per URL from ledger (intent, entities, links, GEO angle)
   → draft (seo-content-writer)
   → GEO pass (geo-content-optimizer + entity-optimizer)
   → publish gate (meta + schema + quality auditor)
@@ -16,23 +21,43 @@ seed topics / products
 
 ## Artifacts (per project, not hub)
 
-| Path idea | Content |
-|-----------|---------|
+| Path | Content |
+|------|---------|
+| `seo/evidence/` | Normalized source-chunk ledgers (JSON per [`source-ledger.schema.json`](references/source-ledger.schema.json)) |
 | `seo/clusters.json` | cluster → keywords → priority |
-| `seo/briefs/<slug>.md` | one brief |
+| `seo/briefs/<slug>.md` | one brief (fields below) |
 | `seo/drafts/` | drafts |
 | `seo/publish-queue.json` | status machine |
-| `seo/monitor/` | snapshots |
+| `seo/monitor/` | measurement snapshots |
+
+### Hub raw signals (not client canon)
+
+`gsc-ga4-pull.mjs` and `ai-visibility-tracker.mjs` write to hub `ai-tracking/seo-signals/<slug>/`. Normalize into project `seo/evidence/` before briefing. See [`project-preflight.md`](references/project-preflight.md).
+
+### Brief fields from ledger
+
+Each `seo/briefs/<slug>.md` should carry:
+
+- target prompt / query + fan-out subqueries
+- gap type (`citation` / `competitor` / `topic`)
+- cited competitor/source URLs
+- own citation vs own recommendation flags
+- chunk flags (extractable / BLUF / atomic) + confidence
+- `ledger_ref` path to the evidence JSON entry id
+
+`ai-citation-strategist` reads the same ledger; do not fork a second scorecard.
 
 ## Hub bootstrap
 
 ```text
-node skills/seo-geo/scripts/init-seo-geo-memory.mjs <project-root>
+node blocks/seo-geo-aio/skills/seo-geo/scripts/init-seo-geo-memory.mjs <project-root>
 ```
+
+Then ensure `seo/evidence`, `seo/briefs`, and `seo/monitor` exist (preflight). `memory/*` from the script remains for research notes; durable GEO evidence lives under `seo/`.
 
 ## Batch controls
 
-- Max parallel drafts: Architect/squad-growth sets (default 1–3)
+- Max parallel drafts: Architect / parent agent via `seo-geo` route (default 1–3)
 - Human gate before publish on client domains
 - Moldova locale defaults in briefs unless overridden
 

@@ -78,6 +78,7 @@
 | Мультимодальность (alt, транскрипты, HTML-таблицы) | Diggity #3 | SKILL Workflow 4 |
 | Миграция сайта 7 шагов | Rush Agency | playbooks/site-migration.md |
 | Money pages → кластер за кластером | Surfer (7DRO) | content-engine.md |
+| Evidence ledger + search-first + citation vs recommendation | GEO agent transcript wBMAATs2Yc0 | geo-e2e-workflow.md; source-ledger.schema.json; SKILL WF1/Handoff |
 | Listicle-микрокатегории + digital PR | Neil Patel | SKILL Workflow 3 (medium-срок, без гарантий) |
 | Linkable assets (free tools/calculators как магнит ссылок) | Surfer | Уместно при контент-стратегии; не автоматизация |
 | GA4 AI-traffic + log-file | Diggity | SKILL Workflow 5 |
